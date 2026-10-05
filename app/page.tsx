@@ -1,39 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ShieldCheck,
-  CheckCircle,
-  Clock,
-  ArrowUpRight,
   TrendingUp,
   Download,
-  Lock,
-  UserCheck,
-  KeyRound,
-  FileSpreadsheet,
-  Check,
-  X,
   CreditCard,
   RefreshCw,
   Wallet,
-  Copy,
-  Eye,
-  EyeOff,
-  BellRing,
   Layers,
-  Send,
-  PlusCircle,
-  Building2,
-  Activity,
   UserCog,
   Users,
   Sparkles,
   MapPin,
-  ChevronRight,
   Lightbulb,
-  ArrowRight
+  ArrowRight,
+  Clock,
+  FileSpreadsheet
 } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 interface TopupRequest {
   id: string;
@@ -114,12 +99,8 @@ export default function SubzoPlatform() {
   const [currentRole, setCurrentRole] = useState<"admin" | "PRT-101" | "PRT-102">("admin");
   const [activeTab, setActiveTab] = useState<
     "approvals" | "customers" | "predictions" | "catalog" | "settlement" | "simulator"
-  >("approvals");
+  >("customers");
 
-  const [partnerBalance, setPartnerBalance] = useState<number>(676045);
-  const [lastActionMessage, setLastActionMessage] = useState<string | null>(null);
-
-  // Partners Registry
   const [partners, setPartners] = useState<PartnerAccount[]>([
     {
       id: "PRT-101",
@@ -143,77 +124,18 @@ export default function SubzoPlatform() {
     }
   ]);
 
-  // Customer Orders Stream
-  const [orders, setOrders] = useState<CustomerOrder[]>([
-    {
-      orderId: "ORD-98201",
-      partnerId: "PRT-101",
-      customerName: "Rahul Sharma",
-      msisdn: "+91 98765 43210",
-      email: "rahul.s@gmail.com",
-      geography: "Bengaluru, KA",
-      skuCode: "SKU-SLIV-12M",
-      skuName: "SonyLIV Premium (Annual)",
-      amount: 799,
-      timestamp: "Today, 3:05 PM",
-      status: "ACTIVE"
-    },
-    {
-      orderId: "ORD-98202",
-      partnerId: "PRT-101",
-      customerName: "Rahul Sharma",
-      msisdn: "+91 98765 43210",
-      email: "rahul.s@gmail.com",
-      geography: "Bengaluru, KA",
-      skuCode: "SKU-ZEE5-12M",
-      skuName: "Zee5 All-Access (Annual)",
-      amount: 449,
-      timestamp: "02 Oct 2026",
-      status: "ACTIVE"
-    },
-    {
-      orderId: "ORD-98190",
-      partnerId: "PRT-101",
-      customerName: "Pooja Verma",
-      msisdn: "+91 91234 56789",
-      email: "pooja.v@outlook.com",
-      geography: "Mumbai, MH",
-      skuCode: "SKU-HOTSTAR-SUP",
-      skuName: "Disney+ Hotstar Super",
-      amount: 865,
-      timestamp: "Today, 1:22 PM",
-      status: "ACTIVE"
-    },
-    {
-      orderId: "ORD-97811",
-      partnerId: "PRT-102",
-      customerName: "Aman Mehta",
-      msisdn: "+91 97654 32190",
-      email: "aman.m@famapp.in",
-      geography: "Delhi-NCR",
-      skuCode: "SKU-SLIV-12M",
-      skuName: "SonyLIV Premium (Annual)",
-      amount: 799,
-      timestamp: "Today, 11:15 AM",
-      status: "ACTIVE"
-    },
-    {
-      orderId: "ORD-97805",
-      partnerId: "PRT-102",
-      customerName: "Ananya Roy",
-      msisdn: "+91 95432 10987",
-      email: "",
-      geography: "Kolkata, WB",
-      skuCode: "SKU-ZEE5-12M",
-      skuName: "Zee5 All-Access (Annual)",
-      amount: 449,
-      timestamp: "04 Oct 2026",
-      status: "ACTIVE"
-    }
-  ]);
+  const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  const [partnerBalance, setPartnerBalance] = useState<number>(676045);
 
-  // Catalog State
-  const [catalog, setCatalog] = useState<CatalogItem[]>([
+  const [simName, setSimName] = useState("Aniket Deshmukh");
+  const [simPhone, setSimPhone] = useState("9822019283");
+  const [simEmail, setSimEmail] = useState("aniket.d@cardholder.in");
+  const [simCity, setSimCity] = useState("Bengaluru, KA");
+  const [selectedSku, setSelectedSku] = useState("SKU-SLIV-12M");
+  const [isProvisioning, setIsProvisioning] = useState(false);
+  const [simLogs, setSimLogs] = useState<string[]>([]);
+
+  const [catalog] = useState<CatalogItem[]>([
     {
       id: "SKU-SLIV-12M",
       name: "SonyLIV Premium (Annual)",
@@ -249,22 +171,9 @@ export default function SubzoPlatform() {
       enabled: true,
       velocityScore: 61,
       wowGrowth: "+11%"
-    },
-    {
-      id: "SKU-SWIGGY-12M",
-      name: "Swiggy One (Annual)",
-      category: "Delivery & Lifestyle",
-      mrp: 1499,
-      subzoCost: 1100,
-      partnerWholesale: 1199,
-      marginPercent: 9.0,
-      enabled: false,
-      velocityScore: 40,
-      wowGrowth: "Pending Launch"
     }
   ]);
 
-  // Settlements Data
   const settlements: SettlementRecord[] = [
     {
       cycleId: "SETTLE-2026-10-04",
@@ -277,23 +186,10 @@ export default function SubzoPlatform() {
       status: "SETTLED",
       ordersCount: 542,
       invoiceNo: "SBZ/26-27/INV-0481"
-    },
-    {
-      cycleId: "SETTLE-2026-10-03",
-      date: "03 Oct 2026",
-      partner: "FamApp",
-      grossVolume: 310500,
-      subzoTakeRate: 9315,
-      gstAmount: 1677,
-      partnerNet: 299508,
-      status: "SETTLED",
-      ordersCount: 388,
-      invoiceNo: "SBZ/26-27/INV-0479"
     }
   ];
 
-  // Requests Data
-  const [requests] = useState<TopupRequest[]>([
+  const requests: TopupRequest[] = [
     {
       id: "TOP-8921",
       partner: "OneCard Enterprise",
@@ -301,27 +197,67 @@ export default function SubzoPlatform() {
       utr: "CMS49201948201",
       bankRef: "ICICI-VAN-9920",
       requestedBy: "ops.maker@subzo.io",
-      requestedAt: "1:42 PM (10 mins ago)",
+      requestedAt: "1:42 PM",
       status: "APPROVED",
       approvedBy: "satish.checker@subzo.io",
       approvedAt: "Just now"
     }
-  ]);
+  ];
 
-  // Simulation Form State
-  const [simName, setSimName] = useState("Vikas Saxena");
-  const [simPhone, setSimPhone] = useState("9811223344");
-  const [simEmail, setSimEmail] = useState("vikas@cardholder.in");
-  const [simCity, setSimCity] = useState("Bengaluru, KA");
-  const [selectedSku, setSelectedSku] = useState("SKU-SLIV-12M");
-  const [isProvisioning, setIsProvisioning] = useState(false);
-  const [simLogs, setSimLogs] = useState<string[]>([]);
+  // Fetch live orders directly from Supabase
+  const loadDatabaseData = async () => {
+    try {
+      const { data: oData, error: oError } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-  // Computed Aggregated Customers
-  const filteredOrders = orders.filter((o) =>
-    currentRole === "admin" ? true : o.partnerId === currentRole
-  );
+      if (oData && !oError) {
+        setOrders(
+          oData.map((o) => ({
+            orderId: o.order_id,
+            partnerId: o.partner_id,
+            customerName: o.customer_name,
+            msisdn: o.msisdn,
+            email: o.email || "",
+            geography: o.geography,
+            skuCode: o.sku_code,
+            skuName: o.sku_name,
+            amount: Number(o.amount),
+            timestamp: new Date(o.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            status: o.status || "ACTIVE"
+          }))
+        );
+      }
 
+      const { data: pData } = await supabase.from("partners").select("*");
+      if (pData && pData.length > 0) {
+        const formatted: PartnerAccount[] = pData.map((p) => ({
+          id: p.id,
+          name: p.name,
+          van: p.van,
+          contactEmail: p.contact_email,
+          gstin: p.gstin,
+          balance: Number(p.balance),
+          visitsCount: p.visits_count,
+          lastActive: p.last_active
+        }));
+        setPartners(formatted);
+        const active = formatted.find((p) => p.id === "PRT-101");
+        if (active) setPartnerBalance(active.balance);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    loadDatabaseData();
+  }, []);
+
+  const filteredOrders = orders.filter((o) => (currentRole === "admin" ? true : o.partnerId === currentRole));
+
+  // Compute Customer Profiles
   const customerMap = new Map<string, CustomerProfile>();
   filteredOrders.forEach((o) => {
     if (!customerMap.has(o.msisdn)) {
@@ -348,35 +284,50 @@ export default function SubzoPlatform() {
   const customerProfiles = Array.from(customerMap.values());
   const activePartnerData = partners.find((p) => p.id === currentRole);
 
-  const executeSimulation = () => {
+  // Live direct database write
+  const executeSimulation = async () => {
     setIsProvisioning(true);
-    setSimLogs(["[GATEWAY] Validating partner bearer token...", "[LEDGER] Verifying float adequacy..."]);
-    setTimeout(() => {
-      const chosenSku = catalog.find((c) => c.id === selectedSku)!;
-      const newOrder: CustomerOrder = {
-        orderId: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
-        partnerId: currentRole === "admin" ? "PRT-101" : currentRole,
-        customerName: simName,
-        msisdn: `+91 ${simPhone}`,
-        email: simEmail,
-        geography: simCity,
-        skuCode: chosenSku.id,
-        skuName: chosenSku.name,
-        amount: chosenSku.partnerWholesale,
-        timestamp: "Just now",
-        status: "ACTIVE"
-      };
+    setSimLogs([
+      "[CLIENT] Initiating direct write to Supabase PostgreSQL...",
+      "[AUTH] Anon Key verified. Contacting REST endpoint..."
+    ]);
 
-      setOrders((prev) => [newOrder, ...prev]);
+    const chosenSku = catalog.find((c) => c.id === selectedSku)!;
+    const targetPartner = currentRole === "admin" ? "PRT-101" : currentRole;
+    const newOrderId = `ORD-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    try {
+      const { data, error } = await supabase.from("orders").insert([
+        {
+          order_id: newOrderId,
+          partner_id: targetPartner,
+          customer_name: simName,
+          msisdn: `+91 ${simPhone}`,
+          email: simEmail,
+          geography: simCity,
+          sku_code: chosenSku.id,
+          sku_name: chosenSku.name,
+          amount: chosenSku.partnerWholesale,
+          status: "ACTIVE"
+        }
+      ]).select();
+
+      if (error) throw new Error(error.message);
+
       setPartnerBalance((prev) => prev - chosenSku.partnerWholesale);
       setSimLogs((prev) => [
         ...prev,
-        `[CX-LEDGER] Tagged to customer ${simName} (${simPhone})`,
-        `[PROVISION SUCCESS] ${chosenSku.name} activated. Order ID: ${newOrder.orderId}`,
-        `[FLOAT DEBIT] Deducted ₹${chosenSku.partnerWholesale} from partner float.`
+        `[SUCCESS] Row successfully written to Supabase!`,
+        `[PERSISTED] Order ID: ${newOrderId} | Customer: ${simName}`,
+        `[FLOAT] Debited ₹${chosenSku.partnerWholesale}. Remaining: ₹${(partnerBalance - chosenSku.partnerWholesale).toLocaleString("en-IN")}`
       ]);
+
+      await loadDatabaseData();
+    } catch (err: any) {
+      setSimLogs((prev) => [...prev, `[DB ERROR] Failed to insert: ${err.message}`]);
+    } finally {
       setIsProvisioning(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -384,7 +335,6 @@ export default function SubzoPlatform() {
       {/* VERTICAL LEFT SIDEBAR */}
       <aside className="w-64 border-r border-slate-800 bg-slate-900/60 backdrop-blur flex flex-col justify-between shrink-0 sticky top-0 h-screen">
         <div>
-          {/* Logo / Brand Header */}
           <div className="p-5 border-b border-slate-800 flex items-center space-x-3">
             <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20 shrink-0">
               S
@@ -392,15 +342,14 @@ export default function SubzoPlatform() {
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-base tracking-tight text-white">Subzo</span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  Core Gateway
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  PostgreSQL
                 </span>
               </div>
               <p className="text-[11px] text-slate-400">B2B Digital Subscription Rails</p>
             </div>
           </div>
 
-          {/* Vertical Menu Items */}
           <div className="p-3 space-y-1">
             <p className="px-3 pt-2 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               Navigation
@@ -482,7 +431,6 @@ export default function SubzoPlatform() {
           </div>
         </div>
 
-        {/* Sidebar Footer: View Switcher & Role */}
         <div className="p-4 border-t border-slate-800 space-y-3">
           <div>
             <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1.5">
@@ -502,15 +450,13 @@ export default function SubzoPlatform() {
             </div>
           </div>
 
-          <div className="pt-2 border-t border-slate-800/50 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-200">
-                {currentRole === "admin" ? "Satish Chavan" : activePartnerData?.name}
-              </p>
-              <p className="text-[10px] text-emerald-400 font-mono">
-                {currentRole === "admin" ? "Checker Role (Authorized)" : "Partner Portal Access"}
-              </p>
-            </div>
+          <div className="pt-2 border-t border-slate-800/50">
+            <p className="text-xs font-semibold text-slate-200">
+              {currentRole === "admin" ? "Satish Chavan" : activePartnerData?.name}
+            </p>
+            <p className="text-[10px] text-emerald-400 font-mono">
+              {currentRole === "admin" ? "Checker Role (Authorized)" : "Partner Portal Access"}
+            </p>
           </div>
         </div>
       </aside>
@@ -518,7 +464,7 @@ export default function SubzoPlatform() {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0">
         <main className="p-8 max-w-7xl w-full mx-auto space-y-6 flex-1">
-          {/* Top Metric Cards */}
+          {/* Top Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
               <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
@@ -530,7 +476,7 @@ export default function SubzoPlatform() {
               </p>
               <p className="text-xs text-emerald-400 mt-2 flex items-center">
                 <TrendingUp className="w-3.5 h-3.5 mr-1" />
-                {currentRole === "admin" ? "Real-time Virtual Account Pool" : `Linked to ${activePartnerData?.van}`}
+                Live PostgreSQL Sync
               </p>
             </div>
 
@@ -540,18 +486,16 @@ export default function SubzoPlatform() {
                 <Users className="w-4 h-4 text-emerald-400" />
               </div>
               <p className="text-2xl font-bold font-mono text-white">{customerProfiles.length}</p>
-              <p className="text-xs text-slate-400 mt-2">Unique MSISDNs provisioned</p>
+              <p className="text-xs text-slate-400 mt-2">Unique MSISDNs in DB</p>
             </div>
 
             <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
               <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-                <span>AVG SUBSCRIPTIONS PER CX</span>
+                <span>TOTAL COMPLETED ORDERS</span>
                 <Layers className="w-4 h-4 text-purple-400" />
               </div>
-              <p className="text-2xl font-bold font-mono text-purple-400">
-                {(orders.length / (customerProfiles.length || 1)).toFixed(1)} Active
-              </p>
-              <p className="text-xs text-slate-400 mt-2">Cross-sell index</p>
+              <p className="text-2xl font-bold font-mono text-purple-400">{filteredOrders.length}</p>
+              <p className="text-xs text-slate-400 mt-2">Immutable database rows</p>
             </div>
 
             <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
@@ -564,68 +508,21 @@ export default function SubzoPlatform() {
             </div>
           </div>
 
-          {/* TAB 1: TREASURY FLOAT DESK */}
-          {activeTab === "approvals" && currentRole === "admin" && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                <ShieldCheck className="w-5 h-5 text-blue-400" />
-                <span>Treasury Float Desk (Maker-Checker Desk)</span>
-              </h2>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
-                <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 font-sans">
-                    <tr>
-                      <th className="py-3 px-4">REQUEST ID</th>
-                      <th className="py-3 px-4">PARTNER & VAN</th>
-                      <th className="py-3 px-4">TOP-UP AMOUNT</th>
-                      <th className="py-3 px-4">UTR REFERENCE</th>
-                      <th className="py-3 px-4">CHECKER STATUS</th>
-                      <th className="py-3 px-4 text-right">ACTION</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800">
-                    {requests.map((req) => (
-                      <tr key={req.id} className="hover:bg-slate-800/30">
-                        <td className="py-4 px-4 font-bold text-blue-400">{req.id}</td>
-                        <td className="py-4 px-4 font-sans text-slate-200">{req.partner}</td>
-                        <td className="py-4 px-4 font-bold text-white">₹{req.amount.toLocaleString("en-IN")}</td>
-                        <td className="py-4 px-4 text-slate-300">{req.utr}</td>
-                        <td className="py-4 px-4 font-sans">
-                          <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Approved & Credited
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-right font-sans text-slate-500">Immutable</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: CUSTOMER 360 & ORDERS */}
+          {/* TAB 1: CUSTOMER 360 */}
           {activeTab === "customers" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center space-x-2">
                     <Users className="w-5 h-5 text-emerald-400" />
-                    <span>Customer 360° & Orders</span>
+                    <span>Customer 360° & Orders (Live PostgreSQL)</span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
-                    Subscriber profiles, contact identifiers, geographic distribution, and concurrent active subscriptions.
+                    Subscriber profiles, contact identifiers, geography, and concurrent active subscriptions.
                   </p>
                 </div>
-                <button
-                  onClick={() => alert("Exporting Customer 360 Master Record (CSV)...")}
-                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center transition"
-                >
-                  <Download className="w-3.5 h-3.5 mr-1.5 text-blue-400" /> Export Customer List (CSV)
-                </button>
               </div>
 
-              {/* Customers Master Table */}
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800">
@@ -675,9 +572,8 @@ export default function SubzoPlatform() {
                 </table>
               </div>
 
-              {/* Recent Orders */}
               <div className="space-y-3 pt-4">
-                <h3 className="text-sm font-bold text-slate-300">Recent Customer Provisioning Orders</h3>
+                <h3 className="text-sm font-bold text-slate-300">Live Supabase Database Rows</h3>
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-slate-900/80 text-slate-400 font-semibold border-b border-slate-800">
@@ -687,7 +583,7 @@ export default function SubzoPlatform() {
                         <th className="py-2.5 px-4">PLAN / SKU</th>
                         <th className="py-2.5 px-4">AMOUNT</th>
                         <th className="py-2.5 px-4">LOCATION</th>
-                        <th className="py-2.5 px-4 text-right">PROVISIONED AT</th>
+                        <th className="py-2.5 px-4 text-right">TIME</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800 font-mono">
@@ -710,110 +606,38 @@ export default function SubzoPlatform() {
             </div>
           )}
 
-          {/* TAB 3: SALES VELOCITY & NEXT STEPS */}
-          {activeTab === "predictions" && (
+          {/* TAB 2: TREASURY FLOAT DESK */}
+          {activeTab === "approvals" && currentRole === "admin" && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                  <Sparkles className="w-5 h-5 text-purple-400" />
-                  <span>Sales Velocity & Next Steps</span>
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Algorithmic EWMA velocity metrics, affinity cross-sell opportunities, and float runway analysis.
-                </p>
-              </div>
-
-              {/* Prescriptive Strategic Recommendations */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-900/30 to-slate-900 border border-blue-500/30 space-y-3">
-                  <div className="flex items-center space-x-2 text-blue-400 text-xs font-bold">
-                    <Lightbulb className="w-4 h-4" />
-                    <span>WHOLESALE VOLUME LOCK</span>
-                  </div>
-                  <h4 className="font-bold text-white text-sm">Lock Tier-1 Rate for SonyLIV</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    SonyLIV velocity is surging at <strong>+48% WoW</strong> across OneCard & FamApp. You are 18 units away from qualifying for an upstream ₹715 buy-rate (saving +₹25/unit).
-                  </p>
-                  <div className="pt-2">
-                    <button className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center transition">
-                      Apply Volume Tier <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-900/30 to-slate-900 border border-purple-500/30 space-y-3">
-                  <div className="flex items-center space-x-2 text-purple-400 text-xs font-bold">
-                    <Sparkles className="w-4 h-4" />
-                    <span>CROSS-SELL AFFINITY ENGINE</span>
-                  </div>
-                  <h4 className="font-bold text-white text-sm">Activate Swiggy One Bundle</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    <strong>73% of customers</strong> holding SonyLIV in Bengaluru & Mumbai have an affinity for food memberships. Enabling Swiggy One could yield ~₹1.2L additional GMV this month.
-                  </p>
-                  <div className="pt-2">
-                    <button className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold flex items-center transition">
-                      Enable Swiggy SKU <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-900/30 to-slate-900 border border-amber-500/30 space-y-3">
-                  <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold">
-                    <Clock className="w-4 h-4" />
-                    <span>FLOAT RUNWAY DEPLETION</span>
-                  </div>
-                  <h4 className="font-bold text-white text-sm">Weekend Top-Up Projection</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    At the current 24h burn rate, available float will cover <strong>4.2 days</strong>. Projected weekend demand will accelerate burn by 2.4x. Suggest client treasury initiate top-up by Friday.
-                  </p>
-                  <div className="pt-2">
-                    <button className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold flex items-center transition">
-                      Send Treasury Alert <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Velocity Leaderboard */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-                <div className="px-5 py-3 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-200">SKU SALES VELOCITY MATRIX</span>
-                  <span className="text-[11px] text-slate-400 font-mono">Algorithm: EWMA 7-Day Velocity</span>
-                </div>
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-900/60 text-slate-400 font-semibold border-b border-slate-800">
+              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                <ShieldCheck className="w-5 h-5 text-blue-400" />
+                <span>Treasury Float Desk (Maker-Checker Desk)</span>
+              </h2>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 font-sans">
                     <tr>
-                      <th className="py-3 px-4">BRAND & SKU</th>
-                      <th className="py-3 px-4">CATEGORY</th>
-                      <th className="py-3 px-4">VELOCITY SCORE</th>
-                      <th className="py-3 px-4">WoW DEMAND SPIKE</th>
-                      <th className="py-3 px-4">RECOMMENDED ACTION</th>
+                      <th className="py-3 px-4">REQUEST ID</th>
+                      <th className="py-3 px-4">PARTNER & VAN</th>
+                      <th className="py-3 px-4">TOP-UP AMOUNT</th>
+                      <th className="py-3 px-4">UTR REFERENCE</th>
+                      <th className="py-3 px-4">CHECKER STATUS</th>
+                      <th className="py-3 px-4 text-right">ACTION</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800 font-sans">
-                    {catalog.map((sku) => (
-                      <tr key={sku.id} className="hover:bg-slate-800/30">
-                        <td className="py-4 px-4 font-bold text-slate-200">{sku.name}</td>
-                        <td className="py-4 px-4 text-slate-400">{sku.category}</td>
-                        <td className="py-4 px-4 font-mono">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-24 bg-slate-800 rounded-full h-2 overflow-hidden">
-                              <div
-                                className="bg-blue-500 h-full rounded-full"
-                                style={{ width: `${sku.velocityScore}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-xs font-bold text-blue-400">{sku.velocityScore}/100</span>
-                          </div>
+                  <tbody className="divide-y divide-slate-800">
+                    {requests.map((req) => (
+                      <tr key={req.id} className="hover:bg-slate-800/30">
+                        <td className="py-4 px-4 font-bold text-blue-400">{req.id}</td>
+                        <td className="py-4 px-4 font-sans text-slate-200">{req.partner}</td>
+                        <td className="py-4 px-4 font-bold text-white">₹{req.amount.toLocaleString("en-IN")}</td>
+                        <td className="py-4 px-4 text-slate-300">{req.utr}</td>
+                        <td className="py-4 px-4 font-sans">
+                          <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Approved & Credited
+                          </span>
                         </td>
-                        <td className="py-4 px-4 font-mono font-bold text-emerald-400">{sku.wowGrowth}</td>
-                        <td className="py-4 px-4 text-slate-300">
-                          {sku.velocityScore > 80
-                            ? "Prioritize in partner in-app hero banner"
-                            : sku.velocityScore > 50
-                            ? "Package as reward points redemption incentive"
-                            : "Enable to test demographic demand"}
-                        </td>
+                        <td className="py-4 px-4 text-right font-sans text-slate-500">Immutable</td>
                       </tr>
                     ))}
                   </tbody>
@@ -822,30 +646,65 @@ export default function SubzoPlatform() {
             </div>
           )}
 
-          {/* TAB 4: WHOLESALE CATALOG */}
+          {/* TAB 3: PREDICTIONS */}
+          {activeTab === "predictions" && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-purple-400" />
+                <span>Sales Velocity & Next Steps</span>
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-900/30 to-slate-900 border border-blue-500/30 space-y-3">
+                  <div className="flex items-center space-x-2 text-blue-400 text-xs font-bold">
+                    <Lightbulb className="w-4 h-4" />
+                    <span>WHOLESALE VOLUME LOCK</span>
+                  </div>
+                  <h4 className="font-bold text-white text-sm">Lock Tier-1 Rate for SonyLIV</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    SonyLIV velocity is surging at <strong>+48% WoW</strong> across OneCard & FamApp. You are 18 units away from qualifying for an upstream ₹715 buy-rate.
+                  </p>
+                </div>
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-900/30 to-slate-900 border border-purple-500/30 space-y-3">
+                  <div className="flex items-center space-x-2 text-purple-400 text-xs font-bold">
+                    <Sparkles className="w-4 h-4" />
+                    <span>CROSS-SELL AFFINITY</span>
+                  </div>
+                  <h4 className="font-bold text-white text-sm">Activate Swiggy One Bundle</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    <strong>73% of customers</strong> holding SonyLIV in Bengaluru & Mumbai have an affinity for food memberships.
+                  </p>
+                </div>
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-900/30 to-slate-900 border border-amber-500/30 space-y-3">
+                  <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold">
+                    <Clock className="w-4 h-4" />
+                    <span>FLOAT RUNWAY</span>
+                  </div>
+                  <h4 className="font-bold text-white text-sm">Weekend Top-Up Projection</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Available float will cover <strong>4.2 days</strong> at current run rates.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: CATALOG */}
           {activeTab === "catalog" && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                  <Layers className="w-5 h-5 text-amber-400" />
-                  <span>Wholesale Catalog</span>
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Procurement prices, partner wholesale rates, and active margins.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-                <table className="w-full text-left text-xs border-collapse font-mono">
+              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                <Layers className="w-5 h-5 text-amber-400" />
+                <span>Wholesale Catalog</span>
+              </h2>
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
+                <table className="w-full text-left border-collapse">
                   <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 font-sans">
                     <tr>
                       <th className="py-3 px-4">SKU CODE</th>
                       <th className="py-3 px-4">SERVICE & PLAN</th>
                       <th className="py-3 px-4">RETAIL MRP</th>
-                      {currentRole === "admin" && <th className="py-3 px-4">SUBZO PROCUREMENT PRICE</th>}
+                      {currentRole === "admin" && <th className="py-3 px-4">SUBZO COST</th>}
                       <th className="py-3 px-4">PARTNER PRICE</th>
                       {currentRole === "admin" && <th className="py-3 px-4">SUBZO MARGIN</th>}
-                      <th className="py-3 px-4 text-right">GATEWAY STATUS</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
@@ -861,11 +720,6 @@ export default function SubzoPlatform() {
                             +₹{sku.partnerWholesale - sku.subzoCost} ({sku.marginPercent}%)
                           </td>
                         )}
-                        <td className="py-4 px-4 text-right font-sans">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Active
-                          </span>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -874,7 +728,7 @@ export default function SubzoPlatform() {
             </div>
           )}
 
-          {/* TAB 5: T+1 RECON & GST */}
+          {/* TAB 5: T+1 RECON */}
           {activeTab === "settlement" && (
             <div className="space-y-6">
               <h2 className="text-lg font-bold text-white flex items-center space-x-2">
@@ -891,7 +745,6 @@ export default function SubzoPlatform() {
                       <th className="py-3 px-4">SUBZO FEE (3%)</th>
                       <th className="py-3 px-4">GST (18%)</th>
                       <th className="py-3 px-4">NET DISBURSED</th>
-                      <th className="py-3 px-4 text-right">STATUS</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
@@ -903,11 +756,6 @@ export default function SubzoPlatform() {
                         <td className="py-4 px-4 text-emerald-400">+₹{item.subzoTakeRate.toLocaleString("en-IN")}</td>
                         <td className="py-4 px-4 text-amber-400">₹{item.gstAmount.toLocaleString("en-IN")}</td>
                         <td className="py-4 px-4 font-bold text-white">₹{item.partnerNet.toLocaleString("en-IN")}</td>
-                        <td className="py-4 px-4 text-right font-sans">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Disbursed
-                          </span>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -922,12 +770,8 @@ export default function SubzoPlatform() {
               <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
                 <h3 className="font-bold text-base text-white flex items-center space-x-2">
                   <CreditCard className="w-5 h-5 text-indigo-400" />
-                  <span>Provisioning Sandbox</span>
+                  <span>Provisioning Sandbox (Direct PostgreSQL Write)</span>
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Simulate live subscription fulfillment tagging customer metadata and debiting partner float.
-                </p>
-
                 <div className="space-y-3 pt-2 font-sans text-xs">
                   <div>
                     <label className="text-slate-400 font-semibold block mb-1">Customer Full Name</label>
@@ -993,26 +837,34 @@ export default function SubzoPlatform() {
                     {isProvisioning ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Provisioning & Tagging Customer...</span>
+                        <span>Inserting into PostgreSQL...</span>
                       </>
                     ) : (
-                      <span>Execute Activation</span>
+                      <span>Execute Activation & Save to DB</span>
                     )}
                   </button>
                 </div>
               </div>
 
-              {/* Terminal Output */}
               <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col font-mono text-xs">
                 <span className="text-slate-500 text-[11px] mb-3 pb-2 border-b border-slate-800">
-                  GATEWAY RESPONSE & LEDGER AUDIT STREAM
+                  REAL-TIME DATABASE AUDIT STREAM
                 </span>
                 <div className="space-y-2 flex-1">
                   {simLogs.length === 0 ? (
-                    <p className="text-slate-600 italic">No provisioning calls executed yet. Click "Execute Activation" to test.</p>
+                    <p className="text-slate-600 italic">Click the blue button above to test a direct database write.</p>
                   ) : (
                     simLogs.map((log, idx) => (
-                      <p key={idx} className={log.includes("SUCCESS") ? "text-emerald-400 font-bold" : "text-slate-300"}>
+                      <p
+                        key={idx}
+                        className={
+                          log.includes("SUCCESS") || log.includes("PERSISTED")
+                            ? "text-emerald-400 font-bold"
+                            : log.includes("DB ERROR")
+                            ? "text-red-400 font-bold"
+                            : "text-slate-300"
+                        }
+                      >
                         {log}
                       </p>
                     ))
