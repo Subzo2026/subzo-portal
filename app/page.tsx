@@ -4,12 +4,10 @@ import React, { useState } from "react";
 import {
   ShieldCheck,
   CheckCircle,
-  AlertTriangle,
   Clock,
   ArrowUpRight,
   TrendingUp,
   Download,
-  Building2,
   Lock,
   UserCheck,
   KeyRound,
@@ -18,7 +16,14 @@ import {
   X,
   CreditCard,
   RefreshCw,
-  Wallet
+  Wallet,
+  Copy,
+  Eye,
+  EyeOff,
+  BellRing,
+  Layers,
+  Send,
+  SlidersHorizontal
 } from "lucide-react";
 
 interface TopupRequest {
@@ -45,12 +50,22 @@ interface SettlementRecord {
   ordersCount: number;
 }
 
-export default function SubzoPlatform() {
-  const [activeTab, setActiveTab] = useState<"approvals" | "settlement" | "simulator">("approvals");
-  const [activeRole, setActiveRole] = useState<"checker" | "partner">("checker");
+interface CatalogItem {
+  id: string;
+  name: string;
+  category: string;
+  mrp: number;
+  subzoCost: number;
+  partnerWholesale: number;
+  marginPercent: number;
+  enabled: boolean;
+}
 
-  // Live float balances
-  const [partnerBalance, setPartnerBalance] = useState<number>(176045);
+export default function SubzoPlatform() {
+  const [activeTab, setActiveTab] = useState<"approvals" | "settlement" | "simulator" | "developer" | "catalog">("approvals");
+
+  // Balances
+  const [partnerBalance, setPartnerBalance] = useState<number>(676045);
   const [lastActionMessage, setLastActionMessage] = useState<string | null>(null);
 
   // Four-Eyes Float Requests
@@ -63,7 +78,9 @@ export default function SubzoPlatform() {
       bankRef: "ICICI-VAN-9920",
       requestedBy: "ops.maker@subzo.io",
       requestedAt: "1:42 PM (10 mins ago)",
-      status: "PENDING_APPROVAL"
+      status: "APPROVED",
+      approvedBy: "satish.checker@subzo.io",
+      approvedAt: "Just now"
     },
     {
       id: "TOP-8919",
@@ -113,13 +130,63 @@ export default function SubzoPlatform() {
     }
   ];
 
+  // Catalog State
+  const [catalog, setCatalog] = useState<CatalogItem[]>([
+    {
+      id: "SKU-SLIV-12M",
+      name: "SonyLIV Premium (Annual)",
+      category: "OTT Streaming",
+      mrp: 999,
+      subzoCost: 740,
+      partnerWholesale: 799,
+      marginPercent: 7.9,
+      enabled: true
+    },
+    {
+      id: "SKU-ZEE5-12M",
+      name: "Zee5 All-Access (Annual)",
+      category: "OTT Streaming",
+      mrp: 699,
+      subzoCost: 410,
+      partnerWholesale: 449,
+      marginPercent: 9.5,
+      enabled: true
+    },
+    {
+      id: "SKU-HOTSTAR-SUP",
+      name: "Disney+ Hotstar Super (Annual)",
+      category: "OTT Streaming",
+      mrp: 899,
+      subzoCost: 830,
+      partnerWholesale: 865,
+      marginPercent: 4.2,
+      enabled: true
+    },
+    {
+      id: "SKU-SWIGGY-12M",
+      name: "Swiggy One (Annual)",
+      category: "Delivery & Lifestyle",
+      mrp: 1499,
+      subzoCost: 1100,
+      partnerWholesale: 1199,
+      marginPercent: 9.0,
+      enabled: false
+    }
+  ]);
+
+  // Developer Keys & Webhooks State
+  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState("https://api.onecard.in/webhooks/subzo-events");
+  const [webhookTestStatus, setWebhookTestStatus] = useState<string | null>(null);
+
   // Simulation State
   const [phoneNumber, setPhoneNumber] = useState("9876543210");
   const [selectedSku, setSelectedSku] = useState("SONY_LIV_12M");
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [simLogs, setSimLogs] = useState<string[]>([]);
 
-  // Four-Eyes Approval Actions
+  // Handlers
   const handleApprove = (id: string, amount: number) => {
     setRequests((prev) =>
       prev.map((req) =>
@@ -144,7 +211,26 @@ export default function SubzoPlatform() {
     );
   };
 
-  // Run Simulated Provisioning
+  const toggleSku = (id: string) => {
+    setCatalog((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item))
+    );
+  };
+
+  const copyApiKey = () => {
+    navigator.clipboard.writeText("sbz_live_sec_99410bf982ad4e07a3c7");
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
+
+  const testWebhook = () => {
+    setWebhookTestStatus("DISPATCHING...");
+    setTimeout(() => {
+      setWebhookTestStatus("HTTP 200 OK — Signature Verified (114ms)");
+      setTimeout(() => setWebhookTestStatus(null), 4000);
+    }, 800);
+  };
+
   const triggerSimulation = () => {
     setIsProvisioning(true);
     setSimLogs(["[SUBZO GATEWAY] Authenticating partner API key...", "[LEDGER] Verifying float adequacy... OK"]);
@@ -162,7 +248,7 @@ export default function SubzoPlatform() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* Top Navigation */}
+      {/* Header */}
       <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
@@ -179,11 +265,11 @@ export default function SubzoPlatform() {
           </div>
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Tab Navigation */}
         <nav className="flex space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
           <button
             onClick={() => setActiveTab("approvals")}
-            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition ${
               activeTab === "approvals" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -191,15 +277,31 @@ export default function SubzoPlatform() {
           </button>
           <button
             onClick={() => setActiveTab("settlement")}
-            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition ${
               activeTab === "settlement" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
             }`}
           >
             T+1 Reconciliation
           </button>
           <button
+            onClick={() => setActiveTab("catalog")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition ${
+              activeTab === "catalog" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            SKU Catalog & Margins
+          </button>
+          <button
+            onClick={() => setActiveTab("developer")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition ${
+              activeTab === "developer" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            API Keys & Webhooks
+          </button>
+          <button
             onClick={() => setActiveTab("simulator")}
-            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition ${
               activeTab === "simulator" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -207,7 +309,7 @@ export default function SubzoPlatform() {
           </button>
         </nav>
 
-        {/* Role Indicator */}
+        {/* User Identity */}
         <div className="flex items-center space-x-3">
           <div className="text-right">
             <p className="text-xs font-semibold text-slate-200">Satish Chavan</p>
@@ -221,15 +323,15 @@ export default function SubzoPlatform() {
 
       {/* Main Container */}
       <main className="p-8 max-w-7xl mx-auto w-full space-y-6 flex-1">
-        {/* Banner Alert if an action occurred */}
+        {/* Banner Alert */}
         {lastActionMessage && (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm flex items-center space-x-3 animate-in fade-in">
+          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm flex items-center space-x-3">
             <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
             <span>{lastActionMessage}</span>
           </div>
         )}
 
-        {/* Stat Overview Cards */}
+        {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
             <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
@@ -270,22 +372,22 @@ export default function SubzoPlatform() {
 
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
             <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-              <span>SETTLEMENT CYCLE</span>
-              <Clock className="w-4 h-4 text-purple-400" />
+              <span>FLOAT HEALTH</span>
+              <BellRing className="w-4 h-4 text-emerald-400" />
             </div>
-            <p className="text-2xl font-bold font-mono text-purple-300">T+1 Automated</p>
-            <p className="text-xs text-slate-400 mt-2">Next batch: 06 Oct, 04:00 AM</p>
+            <p className="text-2xl font-bold font-mono text-emerald-400">Optimal</p>
+            <p className="text-xs text-slate-400 mt-2">Low-balance threshold: ₹50,000</p>
           </div>
         </div>
 
-        {/* TAB 1: Treasury Float Authorizations */}
+        {/* TAB 1: TREASURY FLOAT AUTHORIZATIONS */}
         {activeTab === "approvals" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-white flex items-center space-x-2">
                   <ShieldCheck className="w-5 h-5 text-blue-400" />
-                  <span>Dual Authorization Float Desk (Maker-Checker Policy)</span>
+                  <span>Treasury Float Authorizations (Maker-Checker Desk)</span>
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
                   In compliance with payment operations regulations, top-up requests initiated by the Maker cannot credit partner float until verified by the Checker.
@@ -369,21 +471,10 @@ export default function SubzoPlatform() {
                 </tbody>
               </table>
             </div>
-
-            {/* Audit Trail Note */}
-            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400 flex items-start space-x-3">
-              <KeyRound className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="font-semibold text-slate-300">Cryptographic Signing & Auditability</p>
-                <p className="mt-0.5">
-                  Every float injection creates a corresponding Van-to-Subzo credit event logged with IP hash, Maker user certificate, and Checker authorization timestamp.
-                </p>
-              </div>
-            </div>
           </div>
         )}
 
-        {/* TAB 2: T+1 SETTLEMENT & RECONCILIATION */}
+        {/* TAB 2: T+1 SETTLEMENT */}
         {activeTab === "settlement" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -447,7 +538,165 @@ export default function SubzoPlatform() {
           </div>
         )}
 
-        {/* TAB 3: PROVISIONING SANDBOX */}
+        {/* TAB 3: SKU CATALOG & MARGINS */}
+        {activeTab === "catalog" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                  <Layers className="w-5 h-5 text-blue-400" />
+                  <span>Wholesale SKU Catalog & Margin Matrix</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  Manage live OTT provisions, wholesale buy-rates from aggregators, and partner distribution pricing.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-4">SKU CODE</th>
+                    <th className="py-3 px-4">SERVICE & PLAN</th>
+                    <th className="py-3 px-4">RETAIL MRP</th>
+                    <th className="py-3 px-4">SUBZO BUY-RATE</th>
+                    <th className="py-3 px-4">PARTNER PRICE</th>
+                    <th className="py-3 px-4">SUBZO SPREAD</th>
+                    <th className="py-3 px-4 text-right">GATEWAY STATUS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800 font-mono">
+                  {catalog.map((sku) => (
+                    <tr key={sku.id} className="hover:bg-slate-800/30 transition">
+                      <td className="py-4 px-4 font-bold text-blue-400">{sku.id}</td>
+                      <td className="py-4 px-4 font-sans">
+                        <p className="font-semibold text-slate-200">{sku.name}</p>
+                        <p className="text-[11px] text-slate-500">{sku.category}</p>
+                      </td>
+                      <td className="py-4 px-4 text-slate-400 line-through">₹{sku.mrp}</td>
+                      <td className="py-4 px-4 text-slate-300">₹{sku.subzoCost}</td>
+                      <td className="py-4 px-4 font-bold text-white">₹{sku.partnerWholesale}</td>
+                      <td className="py-4 px-4 font-bold text-emerald-400 font-sans">
+                        +₹{sku.partnerWholesale - sku.subzoCost} ({sku.marginPercent}%)
+                      </td>
+                      <td className="py-4 px-4 text-right font-sans">
+                        <button
+                          onClick={() => toggleSku(sku.id)}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                            sku.enabled
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              : "bg-slate-800 text-slate-500 border border-slate-700"
+                          }`}
+                        >
+                          {sku.enabled ? "Active" : "Disabled"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: API KEYS & WEBHOOKS */}
+        {activeTab === "developer" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* API Keys */}
+            <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+              <h3 className="font-bold text-base text-white flex items-center space-x-2">
+                <KeyRound className="w-5 h-5 text-blue-400" />
+                <span>Production API Gateway Credentials</span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Use this bearer token to authenticate programmatic activation requests from your backend microservices.
+              </p>
+
+              <div className="space-y-3 pt-2">
+                <div>
+                  <label className="text-xs text-slate-400 font-semibold block mb-1">
+                    Partner Client ID
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value="subzo_client_onecard_prod_9921"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-300 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-slate-400 font-semibold block mb-1">
+                    Live Secret Key
+                  </label>
+                  <div className="flex space-x-2">
+                    <input
+                      type={apiKeyVisible ? "text" : "password"}
+                      readOnly
+                      value="sbz_live_sec_99410bf982ad4e07a3c7"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-300 font-mono"
+                    />
+                    <button
+                      onClick={() => setApiKeyVisible(!apiKeyVisible)}
+                      className="px-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-400"
+                    >
+                      {apiKeyVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={copyApiKey}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white flex items-center shrink-0"
+                    >
+                      <Copy className="w-3.5 h-3.5 mr-1" />
+                      {copiedKey ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Webhook Endpoints */}
+            <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+              <h3 className="font-bold text-base text-white flex items-center space-x-2">
+                <Send className="w-5 h-5 text-purple-400" />
+                <span>Real-Time Webhook Dispatcher</span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Subzo dispatches cryptographic events (`subscription.activated`, `float.depleted`) directly to this endpoint.
+              </p>
+
+              <div className="space-y-3 pt-2">
+                <div>
+                  <label className="text-xs text-slate-400 font-semibold block mb-1">
+                    HTTPS Callback URL
+                  </label>
+                  <input
+                    type="text"
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-between">
+                  <button
+                    onClick={testWebhook}
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center transition border border-slate-700"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-purple-400" /> Dispatch Test Event Ping
+                  </button>
+                  {webhookTestStatus && (
+                    <span className="text-xs font-mono text-emerald-400 animate-in fade-in">
+                      {webhookTestStatus}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: PROVISIONING SANDBOX */}
         {activeTab === "simulator" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
