@@ -187,7 +187,7 @@ export default function SubzoPlatform() {
               activeTab === "approvals" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            Four-Eyes Approvals
+            Treasury Float Authorizations
           </button>
           <button
             onClick={() => setActiveTab("settlement")}
@@ -278,7 +278,7 @@ export default function SubzoPlatform() {
           </div>
         </div>
 
-        {/* TAB 1: FOUR-EYES APPROVALS */}
+        {/* TAB 1: Treasury Float Authorizations */}
         {activeTab === "approvals" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
