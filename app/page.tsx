@@ -14,9 +14,11 @@ import {
   Sparkles,
   MapPin,
   Lightbulb,
-  ArrowRight,
   Clock,
-  FileSpreadsheet
+  FileSpreadsheet,
+  CheckCircle2,
+  XCircle,
+  PlusCircle
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -125,15 +127,22 @@ export default function SubzoPlatform() {
   ]);
 
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  const [requests, setRequests] = useState<TopupRequest[]>([]);
   const [partnerBalance, setPartnerBalance] = useState<number>(676045);
 
-  const [simName, setSimName] = useState("Aniket Deshmukh");
-  const [simPhone, setSimPhone] = useState("9822019283");
-  const [simEmail, setSimEmail] = useState("aniket.d@cardholder.in");
+  // Simulation Form State
+  const [simName, setSimName] = useState("Vikas Saxena");
+  const [simPhone, setSimPhone] = useState("9811223344");
+  const [simEmail, setSimEmail] = useState("vikas@cardholder.in");
   const [simCity, setSimCity] = useState("Bengaluru, KA");
   const [selectedSku, setSelectedSku] = useState("SKU-SLIV-12M");
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [simLogs, setSimLogs] = useState<string[]>([]);
+
+  // Maker Form State
+  const [topupAmount, setTopupAmount] = useState<number>(200000);
+  const [topupUtr, setTopupUtr] = useState<string>("CMS" + Math.floor(1000000000 + Math.random() * 9000000000));
+  const [isSubmittingTopup, setIsSubmittingTopup] = useState<boolean>(false);
 
   const [catalog] = useState<CatalogItem[]>([
     {
@@ -186,27 +195,25 @@ export default function SubzoPlatform() {
       status: "SETTLED",
       ordersCount: 542,
       invoiceNo: "SBZ/26-27/INV-0481"
-    }
-  ];
-
-  const requests: TopupRequest[] = [
+    },
     {
-      id: "TOP-8921",
-      partner: "OneCard Enterprise",
-      amount: 500000,
-      utr: "CMS49201948201",
-      bankRef: "ICICI-VAN-9920",
-      requestedBy: "ops.maker@subzo.io",
-      requestedAt: "1:42 PM",
-      status: "APPROVED",
-      approvedBy: "satish.checker@subzo.io",
-      approvedAt: "Just now"
+      cycleId: "SETTLE-2026-10-03",
+      date: "03 Oct 2026",
+      partner: "FamApp Revenue",
+      grossVolume: 310500,
+      subzoTakeRate: 9315,
+      gstAmount: 1677,
+      partnerNet: 299508,
+      status: "SETTLED",
+      ordersCount: 388,
+      invoiceNo: "SBZ/26-27/INV-0479"
     }
   ];
 
-  // Fetch live orders directly from Supabase
+  // Fetch live orders & float requests from Supabase
   const loadDatabaseData = async () => {
     try {
+      // 1. Orders
       const { data: oData, error: oError } = await supabase
         .from("orders")
         .select("*")
@@ -230,6 +237,46 @@ export default function SubzoPlatform() {
         );
       }
 
+      // 2. Float Requests
+      const { data: rData } = await supabase
+        .from("float_requests")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (rData && rData.length > 0) {
+        setRequests(
+          rData.map((r) => ({
+            id: r.id,
+            partner: r.partner,
+            amount: Number(r.amount),
+            utr: r.utr,
+            bankRef: r.bank_ref,
+            requestedBy: r.requested_by,
+            requestedAt: r.requested_at,
+            status: r.status,
+            approvedBy: r.approved_by,
+            approvedAt: r.approved_at
+          }))
+        );
+      } else {
+        // Fallback baseline
+        setRequests([
+          {
+            id: "TOP-8921",
+            partner: "OneCard Enterprise",
+            amount: 500000,
+            utr: "CMS49201948201",
+            bankRef: "ICICI-VAN-9920",
+            requestedBy: "ops.maker@onecard.in",
+            requestedAt: "1:42 PM",
+            status: "APPROVED",
+            approvedBy: "satish.checker@subzo.io",
+            approvedAt: "Just now"
+          }
+        ]);
+      }
+
+      // 3. Partners
       const { data: pData } = await supabase.from("partners").select("*");
       if (pData && pData.length > 0) {
         const formatted: PartnerAccount[] = pData.map((p) => ({
@@ -284,7 +331,114 @@ export default function SubzoPlatform() {
   const customerProfiles = Array.from(customerMap.values());
   const activePartnerData = partners.find((p) => p.id === currentRole);
 
-  // Live direct database write
+  // Maker: Request New Top-up
+  const submitTopupRequest = async () => {
+    setIsSubmittingTopup(true);
+    const targetPartner = currentRole === "admin" ? "OneCard Enterprise" : activePartnerData?.name || "OneCard Enterprise";
+    const reqId = `TOP-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    try {
+      await supabase.from("float_requests").insert([
+        {
+          id: reqId,
+          partner: targetPartner,
+          amount: topupAmount,
+          utr: topupUtr,
+          bank_ref: activePartnerData?.van || "ICICI-VAN-9920",
+          requested_by: currentRole === "admin" ? "admin.maker@subzo.io" : activePartnerData?.contactEmail || "ops@partner.in",
+          requested_at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          status: "PENDING_APPROVAL"
+        }
+      ]);
+      await loadDatabaseData();
+      setTopupUtr("CMS" + Math.floor(1000000000 + Math.random() * 9000000000));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSubmittingTopup(false);
+    }
+  };
+
+  // Checker: Approve Request & Credit Partner Balance
+  const approveTopup = async (req: TopupRequest) => {
+    try {
+      await supabase
+        .from("float_requests")
+        .update({
+          status: "APPROVED",
+          approved_by: "satish.checker@subzo.io",
+          approved_at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        })
+        .eq("id", req.id);
+
+      const targetPartnerId = req.partner.includes("OneCard") ? "PRT-101" : "PRT-102";
+      const partnerRec = partners.find((p) => p.id === targetPartnerId);
+      const newBal = (partnerRec ? partnerRec.balance : partnerBalance) + req.amount;
+
+      await supabase.from("partners").update({ balance: newBal }).eq("id", targetPartnerId);
+      setPartnerBalance(newBal);
+      await loadDatabaseData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Checker: Reject Request
+  const rejectTopup = async (reqId: string) => {
+    try {
+      await supabase
+        .from("float_requests")
+        .update({
+          status: "REJECTED",
+          approved_by: "satish.checker@subzo.io",
+          approved_at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        })
+        .eq("id", reqId);
+      await loadDatabaseData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Export Customer List CSV
+  const downloadCustomersCSV = () => {
+    const headers = "Customer Name,MSISDN,Email,Geography,Active Subscriptions,Lifetime Spend\n";
+    const rows = customerProfiles
+      .map(
+        (c) =>
+          `"${c.name}","${c.msisdn}","${c.email}","${c.geography}",${c.activeSubscriptionsCount},${c.lifetimeSpend}`
+      )
+      .join("\n");
+    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `subzo_customer360_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Export Settlement Recon CSV
+  const downloadSettlementCSV = () => {
+    const headers = "Invoice No,Date,Partner,Gross Volume (INR),Subzo Take Rate (INR),GST (18%),Net Disbursed (INR),Status\n";
+    const rows = settlements
+      .map(
+        (s) =>
+          `"${s.invoiceNo}","${s.date}","${s.partner}",${s.grossVolume},${s.subzoTakeRate},${s.gstAmount},${s.partnerNet},"${s.status}"`
+      )
+      .join("\n");
+    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `subzo_t1_settlement_recon_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Live direct database write for Provisioning
   const executeSimulation = async () => {
     setIsProvisioning(true);
     setSimLogs([
@@ -355,19 +509,24 @@ export default function SubzoPlatform() {
               Navigation
             </p>
 
-            {currentRole === "admin" && (
-              <button
-                onClick={() => setActiveTab("approvals")}
-                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
-                  activeTab === "approvals"
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-                }`}
-              >
+            <button
+              onClick={() => setActiveTab("approvals")}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
+                activeTab === "approvals"
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              }`}
+            >
+              <div className="flex items-center space-x-3">
                 <ShieldCheck className="w-4 h-4 shrink-0 text-blue-400" />
                 <span>Treasury Float Desk</span>
-              </button>
-            )}
+              </div>
+              {requests.filter((r) => r.status === "PENDING_APPROVAL").length > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-[10px] font-bold text-slate-950">
+                  {requests.filter((r) => r.status === "PENDING_APPROVAL").length}
+                </span>
+              )}
+            </button>
 
             <button
               onClick={() => setActiveTab("customers")}
@@ -508,7 +667,7 @@ export default function SubzoPlatform() {
             </div>
           </div>
 
-          {/* TAB 1: CUSTOMER 360 */}
+          {/* TAB 1: CUSTOMER 360 & ORDERS */}
           {activeTab === "customers" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -521,6 +680,13 @@ export default function SubzoPlatform() {
                     Subscriber profiles, contact identifiers, geography, and concurrent active subscriptions.
                   </p>
                 </div>
+                <button
+                  onClick={downloadCustomersCSV}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center space-x-2 transition shadow-sm"
+                >
+                  <Download className="w-4 h-4 text-emerald-400" />
+                  <span>Export Customer List (.CSV)</span>
+                </button>
               </div>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
@@ -573,7 +739,7 @@ export default function SubzoPlatform() {
               </div>
 
               <div className="space-y-3 pt-4">
-                <h3 className="text-sm font-bold text-slate-300">Live Supabase Database Rows</h3>
+                <h3 className="text-sm font-bold text-slate-300">Live Orders in Supabase Database</h3>
                 <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-slate-900/80 text-slate-400 font-semibold border-b border-slate-800">
@@ -606,13 +772,73 @@ export default function SubzoPlatform() {
             </div>
           )}
 
-          {/* TAB 2: TREASURY FLOAT DESK */}
-          {activeTab === "approvals" && currentRole === "admin" && (
+          {/* TAB 2: TREASURY FLOAT DESK (MAKER-CHECKER) */}
+          {activeTab === "approvals" && (
             <div className="space-y-6">
-              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                <ShieldCheck className="w-5 h-5 text-blue-400" />
-                <span>Treasury Float Desk (Maker-Checker Desk)</span>
-              </h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                    <ShieldCheck className="w-5 h-5 text-blue-400" />
+                    <span>Treasury Float Desk (Maker-Checker Signoff)</span>
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Dual-authorization workflow for pre-funding partner virtual accounts (VAN).
+                  </p>
+                </div>
+              </div>
+
+              {/* MAKER SECTION (Top-up Submission Form) */}
+              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
+                <div className="flex items-center space-x-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Maker: Initiate New Float Top-Up Request</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div>
+                    <label className="text-slate-400 block mb-1 font-semibold">Partner Account</label>
+                    <input
+                      type="text"
+                      disabled
+                      value={currentRole === "admin" ? "OneCard Enterprise" : activePartnerData?.name}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-slate-400 cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 block mb-1 font-semibold">Deposit Amount (₹ INR)</label>
+                    <input
+                      type="number"
+                      value={topupAmount}
+                      onChange={(e) => setTopupAmount(Number(e.target.value))}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 font-mono text-slate-200 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 block mb-1 font-semibold">Bank UTR Reference</label>
+                    <input
+                      type="text"
+                      value={topupUtr}
+                      onChange={(e) => setTopupUtr(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 font-mono text-slate-200 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end pt-2">
+                  <button
+                    onClick={submitTopupRequest}
+                    disabled={isSubmittingTopup}
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white text-xs font-semibold rounded-xl transition flex items-center space-x-2 shadow-lg shadow-blue-600/20"
+                  >
+                    {isSubmittingTopup ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <PlusCircle className="w-3.5 h-3.5" />
+                    )}
+                    <span>Submit Request to Checker Desk</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* CHECKER DESK (Review & Sign-off) */}
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 font-sans">
@@ -621,23 +847,62 @@ export default function SubzoPlatform() {
                       <th className="py-3 px-4">PARTNER & VAN</th>
                       <th className="py-3 px-4">TOP-UP AMOUNT</th>
                       <th className="py-3 px-4">UTR REFERENCE</th>
-                      <th className="py-3 px-4">CHECKER STATUS</th>
-                      <th className="py-3 px-4 text-right">ACTION</th>
+                      <th className="py-3 px-4">STATUS</th>
+                      <th className="py-3 px-4 text-right">CHECKER SIGN-OFF</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
                     {requests.map((req) => (
                       <tr key={req.id} className="hover:bg-slate-800/30">
                         <td className="py-4 px-4 font-bold text-blue-400">{req.id}</td>
-                        <td className="py-4 px-4 font-sans text-slate-200">{req.partner}</td>
+                        <td className="py-4 px-4 font-sans text-slate-200">
+                          <div>{req.partner}</div>
+                          <span className="text-[10px] text-slate-500 font-mono">{req.bankRef}</span>
+                        </td>
                         <td className="py-4 px-4 font-bold text-white">₹{req.amount.toLocaleString("en-IN")}</td>
                         <td className="py-4 px-4 text-slate-300">{req.utr}</td>
                         <td className="py-4 px-4 font-sans">
-                          <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Approved & Credited
-                          </span>
+                          {req.status === "APPROVED" && (
+                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center w-fit space-x-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Approved</span>
+                            </span>
+                          )}
+                          {req.status === "PENDING_APPROVAL" && (
+                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center w-fit space-x-1">
+                              <Clock className="w-3 h-3" />
+                              <span>Pending Checker</span>
+                            </span>
+                          )}
+                          {req.status === "REJECTED" && (
+                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 flex items-center w-fit space-x-1">
+                              <XCircle className="w-3 h-3" />
+                              <span>Rejected</span>
+                            </span>
+                          )}
                         </td>
-                        <td className="py-4 px-4 text-right font-sans text-slate-500">Immutable</td>
+                        <td className="py-4 px-4 text-right font-sans">
+                          {req.status === "PENDING_APPROVAL" && currentRole === "admin" ? (
+                            <div className="flex items-center justify-end space-x-2">
+                              <button
+                                onClick={() => approveTopup(req)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition"
+                              >
+                                Approve & Credit
+                              </button>
+                              <button
+                                onClick={() => rejectTopup(req.id)}
+                                className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-200 rounded-lg text-xs font-semibold transition"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-slate-500 text-[11px]">
+                              {req.approvedBy ? `${req.approvedBy} (${req.approvedAt})` : "Immutable"}
+                            </span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -688,7 +953,7 @@ export default function SubzoPlatform() {
             </div>
           )}
 
-          {/* TAB 4: CATALOG */}
+          {/* TAB 4: WHOLESALE CATALOG */}
           {activeTab === "catalog" && (
             <div className="space-y-6">
               <h2 className="text-lg font-bold text-white flex items-center space-x-2">
@@ -728,13 +993,28 @@ export default function SubzoPlatform() {
             </div>
           )}
 
-          {/* TAB 5: T+1 RECON */}
+          {/* TAB 5: T+1 RECON & GST */}
           {activeTab === "settlement" && (
             <div className="space-y-6">
-              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                <FileSpreadsheet className="w-5 h-5 text-teal-400" />
-                <span>T+1 Recon & GST</span>
-              </h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                    <FileSpreadsheet className="w-5 h-5 text-teal-400" />
+                    <span>T+1 Recon & GST Breakdown</span>
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Daily automated net clearing, GST 18% compliance invoice generation, and bank clearing refs.
+                  </p>
+                </div>
+                <button
+                  onClick={downloadSettlementCSV}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center space-x-2 transition shadow-sm"
+                >
+                  <Download className="w-4 h-4 text-teal-400" />
+                  <span>Download Recon Spreadsheet (.CSV)</span>
+                </button>
+              </div>
+
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 font-sans">
