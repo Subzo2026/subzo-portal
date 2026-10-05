@@ -560,9 +560,9 @@ export default function SubzoPlatform() {
                     <th className="py-3 px-4">SKU CODE</th>
                     <th className="py-3 px-4">SERVICE & PLAN</th>
                     <th className="py-3 px-4">RETAIL MRP</th>
-                    <th className="py-3 px-4">SUBZO BUY-RATE</th>
+                    <th className="py-3 px-4">SUBZO PROCUREMENT PRICE</th>
                     <th className="py-3 px-4">PARTNER PRICE</th>
-                    <th className="py-3 px-4">SUBZO SPREAD</th>
+                    <th className="py-3 px-4">SUBZO MARGIN</th>
                     <th className="py-3 px-4 text-right">GATEWAY STATUS</th>
                   </tr>
                 </thead>
