@@ -23,7 +23,9 @@ import {
   BellRing,
   Layers,
   Send,
-  SlidersHorizontal
+  PlusCircle,
+  Building2,
+  Receipt
 } from "lucide-react";
 
 interface TopupRequest {
@@ -45,9 +47,11 @@ interface SettlementRecord {
   partner: string;
   grossVolume: number;
   subzoTakeRate: number;
+  gstAmount: number; // 18% GST on Take Rate
   partnerNet: number;
   status: "SETTLED" | "PENDING_RECON";
   ordersCount: number;
+  invoiceNo: string;
 }
 
 interface CatalogItem {
@@ -61,12 +65,47 @@ interface CatalogItem {
   enabled: boolean;
 }
 
+interface PartnerAccount {
+  id: string;
+  name: string;
+  van: string;
+  contactEmail: string;
+  gstin: string;
+  status: "ACTIVE" | "PENDING_KYC";
+}
+
 export default function SubzoPlatform() {
   const [activeTab, setActiveTab] = useState<"approvals" | "settlement" | "simulator" | "developer" | "catalog">("approvals");
 
   // Balances
   const [partnerBalance, setPartnerBalance] = useState<number>(676045);
   const [lastActionMessage, setLastActionMessage] = useState<string | null>(null);
+
+  // New Partner Modal
+  const [showPartnerModal, setShowPartnerModal] = useState<boolean>(false);
+  const [newPartnerName, setNewPartnerName] = useState("");
+  const [newPartnerEmail, setNewPartnerEmail] = useState("");
+  const [newPartnerGstin, setNewPartnerGstin] = useState("");
+
+  // Partners List
+  const [partners, setPartners] = useState<PartnerAccount[]>([
+    {
+      id: "PRT-101",
+      name: "OneCard Enterprise",
+      van: "ICICI-VAN-9920",
+      contactEmail: "treasury@onecard.in",
+      gstin: "29AABCU9603R1ZM",
+      status: "ACTIVE"
+    },
+    {
+      id: "PRT-102",
+      name: "FamApp Revenue",
+      van: "ICICI-VAN-4811",
+      contactEmail: "ops@famapp.in",
+      gstin: "29AAGCF7182L1ZX",
+      status: "ACTIVE"
+    }
+  ]);
 
   // Four-Eyes Float Requests
   const [requests, setRequests] = useState<TopupRequest[]>([
@@ -96,17 +135,19 @@ export default function SubzoPlatform() {
     }
   ]);
 
-  // Settlements Data
-  const settlements: SettlementRecord[] = [
+  // Settlements Data with GST & Tax Invoice details
+  const [settlements, setSettlements] = useState<SettlementRecord[]>([
     {
       cycleId: "SETTLE-2026-10-04",
       date: "04 Oct 2026",
       partner: "OneCard Enterprise",
       grossVolume: 489200,
       subzoTakeRate: 14676,
-      partnerNet: 474524,
+      gstAmount: 2642, // 18% of 14,676
+      partnerNet: 471882,
       status: "SETTLED",
-      ordersCount: 542
+      ordersCount: 542,
+      invoiceNo: "SBZ/26-27/INV-0481"
     },
     {
       cycleId: "SETTLE-2026-10-03",
@@ -114,9 +155,11 @@ export default function SubzoPlatform() {
       partner: "FamApp",
       grossVolume: 310500,
       subzoTakeRate: 9315,
-      partnerNet: 301185,
+      gstAmount: 1677, // 18% of 9,315
+      partnerNet: 299508,
       status: "SETTLED",
-      ordersCount: 388
+      ordersCount: 388,
+      invoiceNo: "SBZ/26-27/INV-0479"
     },
     {
       cycleId: "SETTLE-2026-10-05 (Today)",
@@ -124,11 +167,13 @@ export default function SubzoPlatform() {
       partner: "OneCard Enterprise",
       grossVolume: 184500,
       subzoTakeRate: 5535,
-      partnerNet: 178965,
+      gstAmount: 996, // 18% of 5,535
+      partnerNet: 177969,
       status: "PENDING_RECON",
-      ordersCount: 204
+      ordersCount: 204,
+      invoiceNo: "SBZ/26-27/INV-0488"
     }
-  ];
+  ]);
 
   // Catalog State
   const [catalog, setCatalog] = useState<CatalogItem[]>([
@@ -246,6 +291,29 @@ export default function SubzoPlatform() {
     }, 1200);
   };
 
+  const handleCreatePartner = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPartnerName) return;
+
+    const randomVanNum = Math.floor(1000 + Math.random() * 9000);
+    const newEntry: PartnerAccount = {
+      id: `PRT-${partners.length + 101}`,
+      name: newPartnerName,
+      van: `ICICI-VAN-${randomVanNum}`,
+      contactEmail: newPartnerEmail || "treasury@client.io",
+      gstin: newPartnerGstin || "29AAACX0000A1Z5",
+      status: "ACTIVE"
+    };
+
+    setPartners((prev) => [...prev, newEntry]);
+    setShowPartnerModal(false);
+    setNewPartnerName("");
+    setNewPartnerEmail("");
+    setNewPartnerGstin("");
+    setLastActionMessage(`Allocated ${newEntry.van} for ${newEntry.name}. VAN routing live.`);
+    setTimeout(() => setLastActionMessage(null), 5000);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       {/* Header */}
@@ -281,7 +349,7 @@ export default function SubzoPlatform() {
               activeTab === "settlement" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            T+1 Reconciliation
+            T+1 Reconciliation & GST
           </button>
           <button
             onClick={() => setActiveTab("catalog")}
@@ -309,8 +377,14 @@ export default function SubzoPlatform() {
           </button>
         </nav>
 
-        {/* User Identity */}
-        <div className="flex items-center space-x-3">
+        {/* User Identity & Partner Onboarding */}
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => setShowPartnerModal(true)}
+            className="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-semibold flex items-center transition"
+          >
+            <PlusCircle className="w-3.5 h-3.5 mr-1.5" /> Onboard Partner VAN
+          </button>
           <div className="text-right">
             <p className="text-xs font-semibold text-slate-200">Satish Chavan</p>
             <p className="text-[11px] text-emerald-400 font-mono flex items-center justify-end">
@@ -372,11 +446,11 @@ export default function SubzoPlatform() {
 
           <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
             <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-              <span>FLOAT HEALTH</span>
-              <BellRing className="w-4 h-4 text-emerald-400" />
+              <span>GST OUTPUT RECONCILED</span>
+              <Receipt className="w-4 h-4 text-purple-400" />
             </div>
-            <p className="text-2xl font-bold font-mono text-emerald-400">Optimal</p>
-            <p className="text-xs text-slate-400 mt-2">Low-balance threshold: ₹50,000</p>
+            <p className="text-2xl font-bold font-mono text-purple-400">₹5,315</p>
+            <p className="text-xs text-slate-400 mt-2">18% GST (CGST 9% + SGST 9%)</p>
           </div>
         </div>
 
@@ -474,24 +548,24 @@ export default function SubzoPlatform() {
           </div>
         )}
 
-        {/* TAB 2: T+1 SETTLEMENT */}
+        {/* TAB 2: T+1 SETTLEMENT & GST RECONCILIATION */}
         {activeTab === "settlement" && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-white flex items-center space-x-2">
                   <FileSpreadsheet className="w-5 h-5 text-purple-400" />
-                  <span>Automated T+1 Settlement & Margin Split Ledger</span>
+                  <span>Automated T+1 Settlement & GST Breakdown Ledger</span>
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
-                  Daily net batch clearing calculating gross vouchers, wholesale supplier costs, and partner payouts.
+                  Tax-compliant batch clearing separating Gross GMV, Subzo 3% Fee, 18% GST (CGST+SGST), and Net Partner Disbursement.
                 </p>
               </div>
               <button
-                onClick={() => alert("Downloading formatted RBI-standard CSV batch reconciliation file...")}
+                onClick={() => alert("Downloading RBI-compliant GST Tax Settlement Ledger (CSV)...")}
                 className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold flex items-center transition"
               >
-                <Download className="w-3.5 h-3.5 mr-1.5 text-blue-400" /> Export Recon Report (CSV)
+                <Download className="w-3.5 h-3.5 mr-1.5 text-blue-400" /> Export GST Recon Ledger
               </button>
             </div>
 
@@ -499,26 +573,32 @@ export default function SubzoPlatform() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800">
                   <tr>
-                    <th className="py-3 px-4">CYCLE ID</th>
-                    <th className="py-3 px-4">SETTLEMENT DATE</th>
-                    <th className="py-3 px-4">PARTNER</th>
-                    <th className="py-3 px-4">ORDERS</th>
-                    <th className="py-3 px-4">GROSS VOLUME</th>
-                    <th className="py-3 px-4">SUBZO TAKE (3%)</th>
-                    <th className="py-3 px-4">NET SETTLEMENT</th>
+                    <th className="py-3 px-4">INVOICE & CYCLE</th>
+                    <th className="py-3 px-4">DATE & PARTNER</th>
+                    <th className="py-3 px-4">VOLUME</th>
+                    <th className="py-3 px-4">GROSS GMV</th>
+                    <th className="py-3 px-4">SUBZO FEE (3%)</th>
+                    <th className="py-3 px-4">GST (18%)</th>
+                    <th className="py-3 px-4">NET DISBURSED</th>
                     <th className="py-3 px-4 text-right">STATUS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800 font-mono">
                   {settlements.map((item) => (
                     <tr key={item.cycleId} className="hover:bg-slate-800/30 transition">
-                      <td className="py-4 px-4 font-bold text-purple-400">{item.cycleId}</td>
-                      <td className="py-4 px-4 text-slate-300 font-sans">{item.date}</td>
-                      <td className="py-4 px-4 font-sans font-semibold text-slate-200">{item.partner}</td>
+                      <td className="py-4 px-4 font-sans">
+                        <p className="font-bold text-purple-400 font-mono">{item.invoiceNo}</p>
+                        <p className="text-[10px] text-slate-500 font-mono">{item.cycleId}</p>
+                      </td>
+                      <td className="py-4 px-4 font-sans">
+                        <p className="font-semibold text-slate-200">{item.partner}</p>
+                        <p className="text-[11px] text-slate-400">{item.date}</p>
+                      </td>
                       <td className="py-4 px-4 text-slate-300">{item.ordersCount} txns</td>
                       <td className="py-4 px-4 font-bold text-slate-200">₹{item.grossVolume.toLocaleString("en-IN")}</td>
                       <td className="py-4 px-4 text-emerald-400 font-bold">+₹{item.subzoTakeRate.toLocaleString("en-IN")}</td>
-                      <td className="py-4 px-4 font-bold text-white">₹{item.partnerNet.toLocaleString("en-IN")}</td>
+                      <td className="py-4 px-4 text-amber-400">₹{item.gstAmount.toLocaleString("en-IN")}</td>
+                      <td className="py-4 px-4 font-bold text-white text-sm">₹{item.partnerNet.toLocaleString("en-IN")}</td>
                       <td className="py-4 px-4 text-right font-sans">
                         {item.status === "SETTLED" ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -603,7 +683,6 @@ export default function SubzoPlatform() {
         {/* TAB 4: API KEYS & WEBHOOKS */}
         {activeTab === "developer" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* API Keys */}
             <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
               <h3 className="font-bold text-base text-white flex items-center space-x-2">
                 <KeyRound className="w-5 h-5 text-blue-400" />
@@ -655,7 +734,6 @@ export default function SubzoPlatform() {
               </div>
             </div>
 
-            {/* Webhook Endpoints */}
             <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
               <h3 className="font-bold text-base text-white flex items-center space-x-2">
                 <Send className="w-5 h-5 text-purple-400" />
@@ -686,7 +764,7 @@ export default function SubzoPlatform() {
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5 text-purple-400" /> Dispatch Test Event Ping
                   </button>
                   {webhookTestStatus && (
-                    <span className="text-xs font-mono text-emerald-400 animate-in fade-in">
+                    <span className="text-xs font-mono text-emerald-400">
                       {webhookTestStatus}
                     </span>
                   )}
@@ -753,7 +831,6 @@ export default function SubzoPlatform() {
               </div>
             </div>
 
-            {/* Realtime Terminal output */}
             <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col font-mono text-xs">
               <span className="text-slate-500 text-[11px] mb-3 pb-2 border-b border-slate-800">
                 GATEWAY RESPONSE & LEDGER AUDIT STREAM
@@ -773,6 +850,89 @@ export default function SubzoPlatform() {
           </div>
         )}
       </main>
+
+      {/* PARTNER ONBOARDING MODAL */}
+      {showPartnerModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <Building2 className="w-5 h-5 text-blue-400" />
+                <h3 className="font-bold text-white text-base">Onboard Enterprise Partner</h3>
+              </div>
+              <button
+                onClick={() => setShowPartnerModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePartner} className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-300 font-semibold block mb-1">
+                  Partner / Brand Legal Entity
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Cred / slice / Fi Money"
+                  value={newPartnerName}
+                  onChange={(e) => setNewPartnerName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-sans"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-semibold block mb-1">
+                  Finance / Treasury Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="treasury@partner.in"
+                  value={newPartnerEmail}
+                  onChange={(e) => setNewPartnerEmail(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-sans"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-slate-300 font-semibold block mb-1">
+                  GSTIN (For 18% Tax Reconciliation)
+                </label>
+                <input
+                  type="text"
+                  placeholder="29AAAAA0000A1Z5"
+                  value={newPartnerGstin}
+                  onChange={(e) => setNewPartnerGstin(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500 uppercase"
+                />
+              </div>
+
+              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-[11px] text-blue-300">
+                Allocation: Generating an automated ICICI Virtual Account Number (`ICICI-VAN-XXXX`) mapped to Subzo's nodal account.
+              </div>
+
+              <div className="flex items-center justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPartnerModal(false)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-600/30"
+                >
+                  Create & Allocate VAN
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
