@@ -18,7 +18,24 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   XCircle,
-  PlusCircle
+  PlusCircle,
+  Tag,
+  ToggleLeft,
+  ToggleRight,
+  Edit2,
+  Trash2,
+  Check,
+  X,
+  Zap,
+  Ticket,
+  FileText,
+  Info,
+  Archive,
+  UploadCloud,
+  Code2,
+  Copy,
+  KeyRound,
+  Terminal
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -59,6 +76,11 @@ interface CatalogItem {
   enabled: boolean;
   velocityScore: number;
   wowGrowth: string;
+  fulfillmentType: "DIRECT_API" | "COUPON_CODE";
+  brandDescription: string;
+  planDescription: string;
+  termsAndConditions: string;
+  redemptionSteps: string;
 }
 
 interface PartnerAccount {
@@ -84,6 +106,8 @@ interface CustomerOrder {
   amount: number;
   timestamp: string;
   status: "ACTIVE" | "EXPIRED";
+  fulfillmentType?: "DIRECT_API" | "COUPON_CODE";
+  voucherCode?: string;
 }
 
 interface CustomerProfile {
@@ -93,15 +117,38 @@ interface CustomerProfile {
   geography: string;
   partnerId: string;
   activeSubscriptionsCount: number;
-  subscriptions: { skuName: string; expiry: string }[];
+  subscriptions: { skuName: string; expiry: string; voucher?: string }[];
   lifetimeSpend: number;
+}
+
+interface VoucherItem {
+  id: string;
+  skuCode: string;
+  code: string;
+  batchRef: string;
+  uploadDate: string;
+  expiryDate: string;
+  status: "AVAILABLE" | "CLAIMED" | "EXPIRED";
+  claimedByOrderId?: string;
+  claimedByMsisdn?: string;
+  claimedAt?: string;
+}
+
+interface ApiKeyItem {
+  id: string;
+  partnerId: string;
+  keyName: string;
+  secretKey: string;
+  environment: "production" | "sandbox";
+  status: "ACTIVE" | "REVOKED";
+  createdAt: string;
 }
 
 export default function SubzoPlatform() {
   const [currentRole, setCurrentRole] = useState<"admin" | "PRT-101" | "PRT-102">("admin");
   const [activeTab, setActiveTab] = useState<
-    "approvals" | "customers" | "predictions" | "catalog" | "settlement" | "simulator"
-  >("customers");
+    "approvals" | "catalog" | "vault" | "developer" | "simulator" | "customers" | "predictions" | "settlement"
+  >("approvals");
 
   const [partners, setPartners] = useState<PartnerAccount[]>([
     {
@@ -129,59 +176,36 @@ export default function SubzoPlatform() {
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [requests, setRequests] = useState<TopupRequest[]>([]);
   const [partnerBalance, setPartnerBalance] = useState<number>(676045);
+  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [vouchers, setVouchers] = useState<VoucherItem[]>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([]);
 
-  // Simulation Form State
+  // Simulator Form State
   const [simName, setSimName] = useState("Vikas Saxena");
   const [simPhone, setSimPhone] = useState("9811223344");
   const [simEmail, setSimEmail] = useState("vikas@cardholder.in");
   const [simCity, setSimCity] = useState("Bengaluru, KA");
-  const [selectedSku, setSelectedSku] = useState("SKU-SLIV-12M");
+  const [selectedSkuId, setSelectedSkuId] = useState("");
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [simLogs, setSimLogs] = useState<string[]>([]);
+  const [lastIssuedCode, setLastIssuedCode] = useState<string | null>(null);
 
-  // Maker Form State
+  // Maker Topup Form
   const [topupAmount, setTopupAmount] = useState<number>(200000);
   const [topupUtr, setTopupUtr] = useState<string>("CMS" + Math.floor(1000000000 + Math.random() * 9000000000));
-  const [isSubmittingTopup, setIsSubmittingTopup] = useState<boolean>(false);
+  const [isSubmittingTopup, setIsSubmittingTopup] = useState(false);
 
-  const [catalog] = useState<CatalogItem[]>([
-    {
-      id: "SKU-SLIV-12M",
-      name: "SonyLIV Premium (Annual)",
-      category: "OTT Streaming",
-      mrp: 999,
-      subzoCost: 740,
-      partnerWholesale: 799,
-      marginPercent: 7.9,
-      enabled: true,
-      velocityScore: 94,
-      wowGrowth: "+48%"
-    },
-    {
-      id: "SKU-ZEE5-12M",
-      name: "Zee5 All-Access (Annual)",
-      category: "OTT Streaming",
-      mrp: 699,
-      subzoCost: 410,
-      partnerWholesale: 449,
-      marginPercent: 9.5,
-      enabled: true,
-      velocityScore: 78,
-      wowGrowth: "+22%"
-    },
-    {
-      id: "SKU-HOTSTAR-SUP",
-      name: "Disney+ Hotstar Super (Annual)",
-      category: "OTT Streaming",
-      mrp: 899,
-      subzoCost: 830,
-      partnerWholesale: 865,
-      marginPercent: 4.2,
-      enabled: true,
-      velocityScore: 61,
-      wowGrowth: "+11%"
-    }
-  ]);
+  // Bulk Voucher Ingestion
+  const [ingestSku, setIngestSku] = useState("SKU-HOTSTAR-SUP");
+  const [ingestBatchRef, setIngestBatchRef] = useState("BATCH-NOV-01");
+  const [ingestExpiryDate, setIngestExpiryDate] = useState("2027-01-31");
+  const [ingestCodesRaw, setIngestCodesRaw] = useState("");
+  const [isIngesting, setIsIngesting] = useState(false);
+
+  // Developer API
+  const [newKeyLabel, setNewKeyLabel] = useState("");
+  const [newKeyEnv, setNewKeyEnv] = useState<"production" | "sandbox">("sandbox");
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const settlements: SettlementRecord[] = [
     {
@@ -195,33 +219,59 @@ export default function SubzoPlatform() {
       status: "SETTLED",
       ordersCount: 542,
       invoiceNo: "SBZ/26-27/INV-0481"
-    },
-    {
-      cycleId: "SETTLE-2026-10-03",
-      date: "03 Oct 2026",
-      partner: "FamApp Revenue",
-      grossVolume: 310500,
-      subzoTakeRate: 9315,
-      gstAmount: 1677,
-      partnerNet: 299508,
-      status: "SETTLED",
-      ordersCount: 388,
-      invoiceNo: "SBZ/26-27/INV-0479"
     }
   ];
 
-  // Fetch live orders & float requests from Supabase
-  const loadDatabaseData = async () => {
+  const loadData = async () => {
     try {
-      // 1. Orders
-      const { data: oData, error: oError } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // 1. Catalog
+      const { data: cData } = await supabase.from("catalog").select("*").order("created_at", { ascending: true });
+      if (cData && cData.length > 0) {
+        const formatted: CatalogItem[] = cData.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          category: c.category,
+          mrp: Number(c.mrp),
+          subzoCost: Number(c.subzo_cost),
+          partnerWholesale: Number(c.partner_wholesale),
+          marginPercent: Number(c.margin_percent),
+          enabled: c.enabled,
+          velocityScore: c.velocity_score || 50,
+          wowGrowth: c.wow_growth || "+0%",
+          fulfillmentType: c.fulfillment_type || "DIRECT_API",
+          brandDescription: c.brand_description || "Brand subscription offering curated on Subzo rails.",
+          planDescription: c.plan_description || "Annual all-access digital subscription tier.",
+          termsAndConditions: c.terms_and_conditions || "Standard non-refundable digital purchase conditions apply.",
+          redemptionSteps: c.redemption_steps || "Direct activation on registered MSISDN."
+        }));
+        setCatalog(formatted);
+        if (!selectedSkuId && formatted.length > 0) setSelectedSkuId(formatted[0].id);
+      }
 
-      if (oData && !oError) {
+      // 2. Vouchers
+      const { data: vData } = await supabase.from("voucher_inventory").select("*").order("created_at", { ascending: false });
+      if (vData) {
+        setVouchers(
+          vData.map((v: any) => ({
+            id: v.id,
+            skuCode: v.sku_code,
+            code: v.code,
+            batchRef: v.batch_ref || "UNTAGGED",
+            uploadDate: v.upload_date || new Date().toISOString().slice(0, 10),
+            expiryDate: v.expiry_date || "2027-12-31",
+            status: v.status,
+            claimedByOrderId: v.claimed_by_order_id,
+            claimedByMsisdn: v.claimed_by_msisdn,
+            claimedAt: v.claimed_at
+          }))
+        );
+      }
+
+      // 3. Orders
+      const { data: oData } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+      if (oData) {
         setOrders(
-          oData.map((o) => ({
+          oData.map((o: any) => ({
             orderId: o.order_id,
             partnerId: o.partner_id,
             customerName: o.customer_name,
@@ -232,20 +282,18 @@ export default function SubzoPlatform() {
             skuName: o.sku_name,
             amount: Number(o.amount),
             timestamp: new Date(o.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            status: o.status || "ACTIVE"
+            status: o.status || "ACTIVE",
+            fulfillmentType: o.fulfillment_type || "DIRECT_API",
+            voucherCode: o.voucher_code || undefined
           }))
         );
       }
 
-      // 2. Float Requests
-      const { data: rData } = await supabase
-        .from("float_requests")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (rData && rData.length > 0) {
+      // 4. Float Requests
+      const { data: rData } = await supabase.from("float_requests").select("*").order("created_at", { ascending: false });
+      if (rData) {
         setRequests(
-          rData.map((r) => ({
+          rData.map((r: any) => ({
             id: r.id,
             partner: r.partner,
             amount: Number(r.amount),
@@ -258,28 +306,28 @@ export default function SubzoPlatform() {
             approvedAt: r.approved_at
           }))
         );
-      } else {
-        // Fallback baseline
-        setRequests([
-          {
-            id: "TOP-8921",
-            partner: "OneCard Enterprise",
-            amount: 500000,
-            utr: "CMS49201948201",
-            bankRef: "ICICI-VAN-9920",
-            requestedBy: "ops.maker@onecard.in",
-            requestedAt: "1:42 PM",
-            status: "APPROVED",
-            approvedBy: "satish.checker@subzo.io",
-            approvedAt: "Just now"
-          }
-        ]);
       }
 
-      // 3. Partners
+      // 5. API Keys
+      const { data: kData } = await supabase.from("api_keys").select("*").order("created_at", { ascending: false });
+      if (kData) {
+        setApiKeys(
+          kData.map((k: any) => ({
+            id: k.id,
+            partnerId: k.partner_id,
+            keyName: k.key_name,
+            secretKey: k.secret_key,
+            environment: k.environment,
+            status: k.status,
+            createdAt: new Date(k.created_at).toLocaleDateString()
+          }))
+        );
+      }
+
+      // 6. Partners
       const { data: pData } = await supabase.from("partners").select("*");
       if (pData && pData.length > 0) {
-        const formatted: PartnerAccount[] = pData.map((p) => ({
+        const formatted: PartnerAccount[] = pData.map((p: any) => ({
           id: p.id,
           name: p.name,
           van: p.van,
@@ -299,12 +347,15 @@ export default function SubzoPlatform() {
   };
 
   useEffect(() => {
-    loadDatabaseData();
+    loadData();
   }, []);
 
   const filteredOrders = orders.filter((o) => (currentRole === "admin" ? true : o.partnerId === currentRole));
+  const filteredKeys = apiKeys.filter((k) => (currentRole === "admin" ? true : k.partnerId === currentRole));
+  const activePartnerData = partners.find((p) => p.id === currentRole);
+  const currentSelectedSku = catalog.find((c) => c.id === selectedSkuId) || catalog[0];
 
-  // Compute Customer Profiles
+  // Customer Profiles
   const customerMap = new Map<string, CustomerProfile>();
   filteredOrders.forEach((o) => {
     if (!customerMap.has(o.msisdn)) {
@@ -324,14 +375,124 @@ export default function SubzoPlatform() {
     profile.lifetimeSpend += o.amount;
     profile.subscriptions.push({
       skuName: o.skuName,
-      expiry: "05 Oct 2027"
+      expiry: "05 Oct 2027",
+      voucher: o.voucherCode
     });
   });
-
   const customerProfiles = Array.from(customerMap.values());
-  const activePartnerData = partners.find((p) => p.id === currentRole);
 
-  // Maker: Request New Top-up
+  // Generate API Token
+  const handleGenerateApiKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newKeyLabel) return;
+
+    const targetPartnerId = currentRole === "admin" ? "PRT-101" : currentRole;
+    const prefix = newKeyEnv === "production" ? "sbz_live_sk_" : "sbz_test_sk_";
+    const randPart = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+    const generatedKey = `${prefix}${randPart}`;
+    const keyId = `KEY-${Math.floor(100 + Math.random() * 900)}`;
+
+    try {
+      const { error } = await supabase.from("api_keys").insert([
+        {
+          id: keyId,
+          partner_id: targetPartnerId,
+          key_name: newKeyLabel.trim(),
+          secret_key: generatedKey,
+          environment: newKeyEnv,
+          status: "ACTIVE"
+        }
+      ]);
+
+      if (error) throw error;
+      setNewKeyLabel("");
+      await loadData();
+    } catch (err: any) {
+      alert("Error generating API key: " + err.message);
+    }
+  };
+
+  // Bulk Ingest Vouchers
+  const handleBulkIngest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const splitCodes = ingestCodesRaw
+      .split(/[\n,]+/)
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+
+    if (splitCodes.length === 0) return;
+    setIsIngesting(true);
+
+    const rows = splitCodes.map((c) => ({
+      sku_code: ingestSku,
+      code: c,
+      batch_ref: ingestBatchRef.trim(),
+      upload_date: new Date().toISOString().slice(0, 10),
+      expiry_date: ingestExpiryDate,
+      status: "AVAILABLE"
+    }));
+
+    try {
+      const { error } = await supabase.from("voucher_inventory").upsert(rows, { onConflict: "code" });
+      if (error) throw error;
+      setIngestCodesRaw("");
+      await loadData();
+      alert(`Successfully ingested ${rows.length} voucher codes into vault!`);
+    } catch (err: any) {
+      alert("Ingestion error: " + err.message);
+    } finally {
+      setIsIngesting(false);
+    }
+  };
+
+  // Simulation Execution
+  const executeSimulation = async () => {
+    if (!currentSelectedSku) return;
+    setIsProvisioning(true);
+    setLastIssuedCode(null);
+
+    const isDirectApi = currentSelectedSku.fulfillmentType === "DIRECT_API";
+    setSimLogs([
+      `[GATEWAY] Initializing ${isDirectApi ? "DIRECT API" : "PRE-LOADED VOUCHER VAULT"} fulfillment...`,
+      `[LEDGER] Verifying float adequacy for wholesale ₹${currentSelectedSku.partnerWholesale}...`
+    ]);
+
+    try {
+      const res = await fetch("/api/provision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          partnerId: currentRole === "admin" ? "PRT-101" : currentRole,
+          customerName: simName,
+          msisdn: `+91 ${simPhone}`,
+          email: simEmail,
+          geography: simCity,
+          skuCode: currentSelectedSku.id,
+          skuName: currentSelectedSku.name,
+          amount: currentSelectedSku.partnerWholesale,
+          fulfillmentType: currentSelectedSku.fulfillmentType
+        })
+      });
+
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+
+      setLastIssuedCode(json.voucherCode);
+      setSimLogs((prev) => [
+        ...prev,
+        `[PERSISTED] Order ID: ${json.orderId}`,
+        json.voucherCode ? `[VAULT CODE ASSIGNED] ${json.voucherCode}` : `[DIRECT PROVISION] Activated on +91 ${simPhone}`,
+        `[FLOAT DEBIT] Partner balance debited ₹${currentSelectedSku.partnerWholesale}. Remaining: ₹${json.newBalance.toLocaleString("en-IN")}`
+      ]);
+      await loadData();
+    } catch (err: any) {
+      setSimLogs((prev) => [...prev, `[FAIL] ${err.message}`]);
+    } finally {
+      setIsProvisioning(false);
+    }
+  };
+
+  // Topup Submit
   const submitTopupRequest = async () => {
     setIsSubmittingTopup(true);
     const targetPartner = currentRole === "admin" ? "OneCard Enterprise" : activePartnerData?.name || "OneCard Enterprise";
@@ -350,7 +511,7 @@ export default function SubzoPlatform() {
           status: "PENDING_APPROVAL"
         }
       ]);
-      await loadDatabaseData();
+      await loadData();
       setTopupUtr("CMS" + Math.floor(1000000000 + Math.random() * 9000000000));
     } catch (e) {
       console.error(e);
@@ -359,7 +520,7 @@ export default function SubzoPlatform() {
     }
   };
 
-  // Checker: Approve Request & Credit Partner Balance
+  // Topup Approve
   const approveTopup = async (req: TopupRequest) => {
     try {
       await supabase
@@ -377,116 +538,21 @@ export default function SubzoPlatform() {
 
       await supabase.from("partners").update({ balance: newBal }).eq("id", targetPartnerId);
       setPartnerBalance(newBal);
-      await loadDatabaseData();
+      await loadData();
     } catch (e) {
       console.error(e);
     }
   };
 
-  // Checker: Reject Request
-  const rejectTopup = async (reqId: string) => {
-    try {
-      await supabase
-        .from("float_requests")
-        .update({
-          status: "REJECTED",
-          approved_by: "satish.checker@subzo.io",
-          approved_at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        })
-        .eq("id", reqId);
-      await loadDatabaseData();
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Export Customer List CSV
-  const downloadCustomersCSV = () => {
-    const headers = "Customer Name,MSISDN,Email,Geography,Active Subscriptions,Lifetime Spend\n";
-    const rows = customerProfiles
-      .map(
-        (c) =>
-          `"${c.name}","${c.msisdn}","${c.email}","${c.geography}",${c.activeSubscriptionsCount},${c.lifetimeSpend}`
-      )
-      .join("\n");
-    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `subzo_customer360_export_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Export Settlement Recon CSV
-  const downloadSettlementCSV = () => {
-    const headers = "Invoice No,Date,Partner,Gross Volume (INR),Subzo Take Rate (INR),GST (18%),Net Disbursed (INR),Status\n";
-    const rows = settlements
-      .map(
-        (s) =>
-          `"${s.invoiceNo}","${s.date}","${s.partner}",${s.grossVolume},${s.subzoTakeRate},${s.gstAmount},${s.partnerNet},"${s.status}"`
-      )
-      .join("\n");
-    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `subzo_t1_settlement_recon_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Live direct database write for Provisioning
-  const executeSimulation = async () => {
-    setIsProvisioning(true);
-    setSimLogs([
-      "[CLIENT] Initiating direct write to Supabase PostgreSQL...",
-      "[AUTH] Anon Key verified. Contacting REST endpoint..."
-    ]);
-
-    const chosenSku = catalog.find((c) => c.id === selectedSku)!;
-    const targetPartner = currentRole === "admin" ? "PRT-101" : currentRole;
-    const newOrderId = `ORD-${Math.floor(10000 + Math.random() * 90000)}`;
-
-    try {
-      const { data, error } = await supabase.from("orders").insert([
-        {
-          order_id: newOrderId,
-          partner_id: targetPartner,
-          customer_name: simName,
-          msisdn: `+91 ${simPhone}`,
-          email: simEmail,
-          geography: simCity,
-          sku_code: chosenSku.id,
-          sku_name: chosenSku.name,
-          amount: chosenSku.partnerWholesale,
-          status: "ACTIVE"
-        }
-      ]).select();
-
-      if (error) throw new Error(error.message);
-
-      setPartnerBalance((prev) => prev - chosenSku.partnerWholesale);
-      setSimLogs((prev) => [
-        ...prev,
-        `[SUCCESS] Row successfully written to Supabase!`,
-        `[PERSISTED] Order ID: ${newOrderId} | Customer: ${simName}`,
-        `[FLOAT] Debited ₹${chosenSku.partnerWholesale}. Remaining: ₹${(partnerBalance - chosenSku.partnerWholesale).toLocaleString("en-IN")}`
-      ]);
-
-      await loadDatabaseData();
-    } catch (err: any) {
-      setSimLogs((prev) => [...prev, `[DB ERROR] Failed to insert: ${err.message}`]);
-    } finally {
-      setIsProvisioning(false);
-    }
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(id);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans">
-      {/* VERTICAL LEFT SIDEBAR */}
+      {/* STRUCTURED VERTICAL LEFT SIDEBAR */}
       <aside className="w-64 border-r border-slate-800 bg-slate-900/60 backdrop-blur flex flex-col justify-between shrink-0 sticky top-0 h-screen">
         <div>
           <div className="p-5 border-b border-slate-800 flex items-center space-x-3">
@@ -506,9 +572,10 @@ export default function SubzoPlatform() {
 
           <div className="p-3 space-y-1">
             <p className="px-3 pt-2 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              Navigation
+              Operations Workflow
             </p>
 
+            {/* 1. Treasury */}
             <button
               onClick={() => setActiveTab("approvals")}
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
@@ -519,7 +586,7 @@ export default function SubzoPlatform() {
             >
               <div className="flex items-center space-x-3">
                 <ShieldCheck className="w-4 h-4 shrink-0 text-blue-400" />
-                <span>Treasury Float Desk</span>
+                <span>1. Treasury Float Desk</span>
               </div>
               {requests.filter((r) => r.status === "PENDING_APPROVAL").length > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-[10px] font-bold text-slate-950">
@@ -528,6 +595,64 @@ export default function SubzoPlatform() {
               )}
             </button>
 
+            {/* 2. Catalog */}
+            <button
+              onClick={() => setActiveTab("catalog")}
+              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
+                activeTab === "catalog"
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              }`}
+            >
+              <Layers className="w-4 h-4 shrink-0 text-indigo-400" />
+              <span>2. Wholesale Catalog</span>
+            </button>
+
+            {/* 3. Voucher Vault */}
+            <button
+              onClick={() => setActiveTab("vault")}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
+                activeTab === "vault"
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <Archive className="w-4 h-4 shrink-0 text-amber-400" />
+                <span>3. Voucher Code Vault</span>
+              </div>
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-mono text-amber-400 border border-slate-700">
+                {vouchers.filter((v) => v.status === "AVAILABLE").length}
+              </span>
+            </button>
+
+            {/* 4. Developer API */}
+            <button
+              onClick={() => setActiveTab("developer")}
+              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
+                activeTab === "developer"
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              }`}
+            >
+              <Code2 className="w-4 h-4 shrink-0 text-cyan-400" />
+              <span>4. Developer API & Keys</span>
+            </button>
+
+            {/* 5. Sandbox */}
+            <button
+              onClick={() => setActiveTab("simulator")}
+              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
+                activeTab === "simulator"
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              }`}
+            >
+              <CreditCard className="w-4 h-4 shrink-0 text-emerald-400" />
+              <span>5. Provisioning Sandbox</span>
+            </button>
+
+            {/* 6. Customer 360 */}
             <button
               onClick={() => setActiveTab("customers")}
               className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
@@ -536,10 +661,11 @@ export default function SubzoPlatform() {
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
               }`}
             >
-              <Users className="w-4 h-4 shrink-0 text-emerald-400" />
-              <span>Customer 360° & Orders</span>
+              <Users className="w-4 h-4 shrink-0 text-teal-400" />
+              <span>6. Customer 360° & Orders</span>
             </button>
 
+            {/* 7. Velocity */}
             <button
               onClick={() => setActiveTab("predictions")}
               className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
@@ -549,21 +675,10 @@ export default function SubzoPlatform() {
               }`}
             >
               <Sparkles className="w-4 h-4 shrink-0 text-purple-400" />
-              <span>Sales Velocity & Next Steps</span>
+              <span>7. Sales Velocity & Insights</span>
             </button>
 
-            <button
-              onClick={() => setActiveTab("catalog")}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
-                activeTab === "catalog"
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-              }`}
-            >
-              <Layers className="w-4 h-4 shrink-0 text-amber-400" />
-              <span>Wholesale Catalog</span>
-            </button>
-
+            {/* 8. Settlement */}
             <button
               onClick={() => setActiveTab("settlement")}
               className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
@@ -572,20 +687,8 @@ export default function SubzoPlatform() {
                   : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
               }`}
             >
-              <FileSpreadsheet className="w-4 h-4 shrink-0 text-teal-400" />
-              <span>T+1 Recon & GST</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("simulator")}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
-                activeTab === "simulator"
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-              }`}
-            >
-              <CreditCard className="w-4 h-4 shrink-0 text-indigo-400" />
-              <span>Provisioning Sandbox</span>
+              <FileSpreadsheet className="w-4 h-4 shrink-0 text-rose-400" />
+              <span>8. T+1 Recon & GST</span>
             </button>
           </div>
         </div>
@@ -620,14 +723,14 @@ export default function SubzoPlatform() {
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT CONTAINER */}
       <div className="flex-1 flex flex-col min-w-0">
         <main className="p-8 max-w-7xl w-full mx-auto space-y-6 flex-1">
-          {/* Top Metrics */}
+          {/* Top Operational Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
               <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-                <span>{currentRole === "admin" ? "TOTAL FLOAT POOL" : "AVAILABLE PARTNER FLOAT"}</span>
+                <span>AVAILABLE FLOAT POOL</span>
                 <Wallet className="w-4 h-4 text-blue-400" />
               </div>
               <p className="text-2xl font-bold font-mono text-white">
@@ -635,167 +738,66 @@ export default function SubzoPlatform() {
               </p>
               <p className="text-xs text-emerald-400 mt-2 flex items-center">
                 <TrendingUp className="w-3.5 h-3.5 mr-1" />
-                Live PostgreSQL Sync
+                Live Settlement Balance
               </p>
             </div>
 
             <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
               <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-                <span>ACTIVE CUSTOMERS (CX)</span>
-                <Users className="w-4 h-4 text-emerald-400" />
+                <span>ACTIVE WHOLESALE SKUS</span>
+                <Layers className="w-4 h-4 text-indigo-400" />
               </div>
-              <p className="text-2xl font-bold font-mono text-white">{customerProfiles.length}</p>
-              <p className="text-xs text-slate-400 mt-2">Unique MSISDNs in DB</p>
+              <p className="text-2xl font-bold font-mono text-white">
+                {catalog.filter((c) => c.enabled).length} / {catalog.length}
+              </p>
+              <p className="text-xs text-slate-400 mt-2">Ready for Provisioning</p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
+              <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                <span>LIVE VAULT STOCK</span>
+                <Archive className="w-4 h-4 text-amber-400" />
+              </div>
+              <p className="text-2xl font-bold font-mono text-amber-400">
+                {vouchers.filter((v) => v.status === "AVAILABLE").length} Codes
+              </p>
+              <p className="text-xs text-slate-400 mt-2">{vouchers.filter((v) => v.status === "CLAIMED").length} Claimed</p>
             </div>
 
             <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
               <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
                 <span>TOTAL COMPLETED ORDERS</span>
-                <Layers className="w-4 h-4 text-purple-400" />
+                <Sparkles className="w-4 h-4 text-purple-400" />
               </div>
               <p className="text-2xl font-bold font-mono text-purple-400">{filteredOrders.length}</p>
-              <p className="text-xs text-slate-400 mt-2">Immutable database rows</p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
-              <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-                <span>TOP SELLING BRAND</span>
-                <Sparkles className="w-4 h-4 text-amber-400" />
-              </div>
-              <p className="text-2xl font-bold text-amber-400">SonyLIV 12M</p>
               <p className="text-xs text-emerald-400 mt-2">+48% WoW Velocity</p>
             </div>
           </div>
 
-          {/* TAB 1: CUSTOMER 360 & ORDERS */}
-          {activeTab === "customers" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                    <Users className="w-5 h-5 text-emerald-400" />
-                    <span>Customer 360° & Orders (Live PostgreSQL)</span>
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Subscriber profiles, contact identifiers, geography, and concurrent active subscriptions.
-                  </p>
-                </div>
-                <button
-                  onClick={downloadCustomersCSV}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center space-x-2 transition shadow-sm"
-                >
-                  <Download className="w-4 h-4 text-emerald-400" />
-                  <span>Export Customer List (.CSV)</span>
-                </button>
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800">
-                    <tr>
-                      <th className="py-3 px-4">CUSTOMER NAME</th>
-                      <th className="py-3 px-4">PHONE NUMBER (MSISDN)</th>
-                      <th className="py-3 px-4">EMAIL ID</th>
-                      <th className="py-3 px-4">GEOGRAPHY</th>
-                      <th className="py-3 px-4">ACTIVE SUBSCRIPTIONS</th>
-                      <th className="py-3 px-4">ACTIVE PLANS</th>
-                      <th className="py-3 px-4 text-right">LIFETIME SPEND</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800">
-                    {customerProfiles.map((cx) => (
-                      <tr key={cx.msisdn} className="hover:bg-slate-800/30 transition">
-                        <td className="py-4 px-4 font-semibold text-slate-200">{cx.name}</td>
-                        <td className="py-4 px-4 font-mono text-blue-400">{cx.msisdn}</td>
-                        <td className="py-4 px-4 text-slate-400 font-sans">{cx.email}</td>
-                        <td className="py-4 px-4 text-slate-300 flex items-center pt-4">
-                          <MapPin className="w-3.5 h-3.5 mr-1 text-slate-500 shrink-0" />
-                          {cx.geography}
-                        </td>
-                        <td className="py-4 px-4 font-mono">
-                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                            {cx.activeSubscriptionsCount} Active
-                          </span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex flex-wrap gap-1.5">
-                            {cx.subscriptions.map((s, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-0.5 rounded-md text-[10px] bg-slate-800 text-slate-300 border border-slate-700"
-                              >
-                                {s.skuName}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-right font-mono font-bold text-white">
-                          ₹{cx.lifetimeSpend.toLocaleString("en-IN")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="space-y-3 pt-4">
-                <h3 className="text-sm font-bold text-slate-300">Live Orders in Supabase Database</h3>
-                <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-900/80 text-slate-400 font-semibold border-b border-slate-800">
-                      <tr>
-                        <th className="py-2.5 px-4">ORDER ID</th>
-                        <th className="py-2.5 px-4">CUSTOMER</th>
-                        <th className="py-2.5 px-4">PLAN / SKU</th>
-                        <th className="py-2.5 px-4">AMOUNT</th>
-                        <th className="py-2.5 px-4">LOCATION</th>
-                        <th className="py-2.5 px-4 text-right">TIME</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800 font-mono">
-                      {filteredOrders.map((ord) => (
-                        <tr key={ord.orderId} className="hover:bg-slate-800/30">
-                          <td className="py-3 px-4 text-purple-400 font-bold">{ord.orderId}</td>
-                          <td className="py-3 px-4 font-sans text-slate-200">
-                            {ord.customerName} ({ord.msisdn})
-                          </td>
-                          <td className="py-3 px-4 font-sans text-slate-300">{ord.skuName}</td>
-                          <td className="py-3 px-4 font-bold text-white">₹{ord.amount}</td>
-                          <td className="py-3 px-4 font-sans text-slate-400">{ord.geography}</td>
-                          <td className="py-3 px-4 text-right font-sans text-slate-500">{ord.timestamp}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: TREASURY FLOAT DESK (MAKER-CHECKER) */}
+          {/* TAB 1: TREASURY FLOAT DESK */}
           {activeTab === "approvals" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center space-x-2">
                     <ShieldCheck className="w-5 h-5 text-blue-400" />
-                    <span>Treasury Float Desk (Maker-Checker Signoff)</span>
+                    <span>1. Treasury Float Desk (Maker-Checker Workflow)</span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
-                    Dual-authorization workflow for pre-funding partner virtual accounts (VAN).
+                    Pre-funding approvals, bank UTR validation, and partner virtual account (VAN) credit lines.
                   </p>
                 </div>
               </div>
 
-              {/* MAKER SECTION (Top-up Submission Form) */}
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <div className="flex items-center space-x-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
+              {/* Maker Section */}
+              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4 text-xs">
+                <div className="flex items-center space-x-2 font-bold text-blue-400 uppercase tracking-wider">
                   <PlusCircle className="w-4 h-4" />
-                  <span>Maker: Initiate New Float Top-Up Request</span>
+                  <span>Maker: Initiate New Float Deposit</span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-slate-400 block mb-1 font-semibold">Partner Account</label>
+                    <label className="text-slate-400 font-semibold block mb-1">Partner Account</label>
                     <input
                       type="text"
                       disabled
@@ -804,48 +806,44 @@ export default function SubzoPlatform() {
                     />
                   </div>
                   <div>
-                    <label className="text-slate-400 block mb-1 font-semibold">Deposit Amount (₹ INR)</label>
+                    <label className="text-slate-400 font-semibold block mb-1">Top-Up Amount (₹)</label>
                     <input
                       type="number"
                       value={topupAmount}
                       onChange={(e) => setTopupAmount(Number(e.target.value))}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 font-mono text-slate-200 focus:outline-none focus:border-blue-500"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 font-mono text-slate-200"
                     />
                   </div>
                   <div>
-                    <label className="text-slate-400 block mb-1 font-semibold">Bank UTR Reference</label>
+                    <label className="text-slate-400 font-semibold block mb-1">Bank UTR Number</label>
                     <input
                       type="text"
                       value={topupUtr}
                       onChange={(e) => setTopupUtr(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 font-mono text-slate-200 focus:outline-none focus:border-blue-500"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 font-mono text-slate-200"
                     />
                   </div>
                 </div>
-                <div className="flex justify-end pt-2">
+                <div className="flex justify-end">
                   <button
                     onClick={submitTopupRequest}
                     disabled={isSubmittingTopup}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white text-xs font-semibold rounded-xl transition flex items-center space-x-2 shadow-lg shadow-blue-600/20"
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl flex items-center space-x-2"
                   >
-                    {isSubmittingTopup ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <PlusCircle className="w-3.5 h-3.5" />
-                    )}
-                    <span>Submit Request to Checker Desk</span>
+                    {isSubmittingTopup ? <RefreshCw className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
+                    <span>Submit to Checker Desk</span>
                   </button>
                 </div>
               </div>
 
-              {/* CHECKER DESK (Review & Sign-off) */}
+              {/* Checker Table */}
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
                 <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 font-sans">
+                  <thead className="bg-slate-900 text-slate-400 font-sans border-b border-slate-800">
                     <tr>
                       <th className="py-3 px-4">REQUEST ID</th>
                       <th className="py-3 px-4">PARTNER & VAN</th>
-                      <th className="py-3 px-4">TOP-UP AMOUNT</th>
+                      <th className="py-3 px-4">AMOUNT</th>
                       <th className="py-3 px-4">UTR REFERENCE</th>
                       <th className="py-3 px-4">STATUS</th>
                       <th className="py-3 px-4 text-right">CHECKER SIGN-OFF</th>
@@ -855,52 +853,30 @@ export default function SubzoPlatform() {
                     {requests.map((req) => (
                       <tr key={req.id} className="hover:bg-slate-800/30">
                         <td className="py-4 px-4 font-bold text-blue-400">{req.id}</td>
-                        <td className="py-4 px-4 font-sans text-slate-200">
-                          <div>{req.partner}</div>
-                          <span className="text-[10px] text-slate-500 font-mono">{req.bankRef}</span>
-                        </td>
+                        <td className="py-4 px-4 font-sans text-slate-200">{req.partner}</td>
                         <td className="py-4 px-4 font-bold text-white">₹{req.amount.toLocaleString("en-IN")}</td>
                         <td className="py-4 px-4 text-slate-300">{req.utr}</td>
                         <td className="py-4 px-4 font-sans">
-                          {req.status === "APPROVED" && (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center w-fit space-x-1">
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>Approved</span>
+                          {req.status === "APPROVED" ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              Approved
                             </span>
-                          )}
-                          {req.status === "PENDING_APPROVAL" && (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center w-fit space-x-1">
-                              <Clock className="w-3 h-3" />
-                              <span>Pending Checker</span>
-                            </span>
-                          )}
-                          {req.status === "REJECTED" && (
-                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 flex items-center w-fit space-x-1">
-                              <XCircle className="w-3 h-3" />
-                              <span>Rejected</span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                              Pending
                             </span>
                           )}
                         </td>
                         <td className="py-4 px-4 text-right font-sans">
                           {req.status === "PENDING_APPROVAL" && currentRole === "admin" ? (
-                            <div className="flex items-center justify-end space-x-2">
-                              <button
-                                onClick={() => approveTopup(req)}
-                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition"
-                              >
-                                Approve & Credit
-                              </button>
-                              <button
-                                onClick={() => rejectTopup(req.id)}
-                                className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-200 rounded-lg text-xs font-semibold transition"
-                              >
-                                Reject
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => approveTopup(req)}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold"
+                            >
+                              Approve & Credit
+                            </button>
                           ) : (
-                            <span className="text-slate-500 text-[11px]">
-                              {req.approvedBy ? `${req.approvedBy} (${req.approvedAt})` : "Immutable"}
-                            </span>
+                            <span className="text-slate-500 text-[11px]">{req.approvedBy || "Immutable"}</span>
                           )}
                         </td>
                       </tr>
@@ -911,65 +887,33 @@ export default function SubzoPlatform() {
             </div>
           )}
 
-          {/* TAB 3: PREDICTIONS */}
-          {activeTab === "predictions" && (
+          {/* TAB 2: WHOLESALE CATALOG */}
+          {activeTab === "catalog" && (
             <div className="space-y-6">
-              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 text-purple-400" />
-                <span>Sales Velocity & Next Steps</span>
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-900/30 to-slate-900 border border-blue-500/30 space-y-3">
-                  <div className="flex items-center space-x-2 text-blue-400 text-xs font-bold">
-                    <Lightbulb className="w-4 h-4" />
-                    <span>WHOLESALE VOLUME LOCK</span>
-                  </div>
-                  <h4 className="font-bold text-white text-sm">Lock Tier-1 Rate for SonyLIV</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    SonyLIV velocity is surging at <strong>+48% WoW</strong> across OneCard & FamApp. You are 18 units away from qualifying for an upstream ₹715 buy-rate.
-                  </p>
-                </div>
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-900/30 to-slate-900 border border-purple-500/30 space-y-3">
-                  <div className="flex items-center space-x-2 text-purple-400 text-xs font-bold">
-                    <Sparkles className="w-4 h-4" />
-                    <span>CROSS-SELL AFFINITY</span>
-                  </div>
-                  <h4 className="font-bold text-white text-sm">Activate Swiggy One Bundle</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    <strong>73% of customers</strong> holding SonyLIV in Bengaluru & Mumbai have an affinity for food memberships.
-                  </p>
-                </div>
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-900/30 to-slate-900 border border-amber-500/30 space-y-3">
-                  <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold">
-                    <Clock className="w-4 h-4" />
-                    <span>FLOAT RUNWAY</span>
-                  </div>
-                  <h4 className="font-bold text-white text-sm">Weekend Top-Up Projection</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Available float will cover <strong>4.2 days</strong> at current run rates.
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                    <Layers className="w-5 h-5 text-indigo-400" />
+                    <span>2. Wholesale Subscription Catalog</span>
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Manage direct OEM buy rates, wholesale prices to partners, and plan redemption specifications.
                   </p>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* TAB 4: WHOLESALE CATALOG */}
-          {activeTab === "catalog" && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                <Layers className="w-5 h-5 text-amber-400" />
-                <span>Wholesale Catalog</span>
-              </h2>
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 font-sans">
                     <tr>
                       <th className="py-3 px-4">SKU CODE</th>
                       <th className="py-3 px-4">SERVICE & PLAN</th>
+                      <th className="py-3 px-4">FULFILLMENT</th>
                       <th className="py-3 px-4">RETAIL MRP</th>
-                      {currentRole === "admin" && <th className="py-3 px-4">SUBZO COST</th>}
-                      <th className="py-3 px-4">PARTNER PRICE</th>
-                      {currentRole === "admin" && <th className="py-3 px-4">SUBZO MARGIN</th>}
+                      {currentRole === "admin" && <th className="py-3 px-4">SUBZO BUY RATE</th>}
+                      <th className="py-3 px-4">WHOLESALE</th>
+                      {currentRole === "admin" && <th className="py-3 px-4">MARGIN</th>}
+                      <th className="py-3 px-4 text-center">STATUS</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
@@ -977,6 +921,19 @@ export default function SubzoPlatform() {
                       <tr key={sku.id} className="hover:bg-slate-800/30">
                         <td className="py-4 px-4 font-bold text-blue-400">{sku.id}</td>
                         <td className="py-4 px-4 font-sans font-semibold text-slate-200">{sku.name}</td>
+                        <td className="py-4 px-4 font-sans">
+                          {sku.fulfillmentType === "DIRECT_API" ? (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-flex items-center space-x-1">
+                              <Zap className="w-3 h-3" />
+                              <span>Direct API</span>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 inline-flex items-center space-x-1">
+                              <Ticket className="w-3 h-3" />
+                              <span>Voucher Vault</span>
+                            </span>
+                          )}
+                        </td>
                         <td className="py-4 px-4 text-slate-400 line-through">₹{sku.mrp}</td>
                         {currentRole === "admin" && <td className="py-4 px-4 text-slate-300">₹{sku.subzoCost}</td>}
                         <td className="py-4 px-4 font-bold text-white">₹{sku.partnerWholesale}</td>
@@ -985,6 +942,17 @@ export default function SubzoPlatform() {
                             +₹{sku.partnerWholesale - sku.subzoCost} ({sku.marginPercent}%)
                           </td>
                         )}
+                        <td className="py-4 px-4 text-center">
+                          {sku.enabled ? (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-sans">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700 font-sans">
+                              Disabled
+                            </span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -993,36 +961,387 @@ export default function SubzoPlatform() {
             </div>
           )}
 
-          {/* TAB 5: T+1 RECON & GST */}
-          {activeTab === "settlement" && (
+          {/* TAB 3: VOUCHER VAULT */}
+          {activeTab === "vault" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                    <FileSpreadsheet className="w-5 h-5 text-teal-400" />
-                    <span>T+1 Recon & GST Breakdown</span>
+                    <Archive className="w-5 h-5 text-amber-400" />
+                    <span>3. Pre-Loaded Voucher Inventory Vault</span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
-                    Daily automated net clearing, GST 18% compliance invoice generation, and bank clearing refs.
+                    Manage supplier coupon batches with upload & expiry dates. API orders automatically claim from this pool.
                   </p>
                 </div>
+              </div>
+
+              {/* Bulk Loader Form */}
+              {currentRole === "admin" && (
+                <form onSubmit={handleBulkIngest} className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4 text-xs">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 className="font-bold text-white text-sm flex items-center space-x-2">
+                      <UploadCloud className="w-4 h-4 text-amber-400" />
+                      <span>Bulk Ingest Supplier Voucher Codes</span>
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-slate-400 font-semibold block mb-1">Target SKU</label>
+                      <select
+                        value={ingestSku}
+                        onChange={(e) => setIngestSku(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
+                      >
+                        {catalog
+                          .filter((c) => c.fulfillmentType === "COUPON_CODE")
+                          .map((sku) => (
+                            <option key={sku.id} value={sku.id}>{sku.name} ({sku.id})</option>
+                          ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-slate-400 font-semibold block mb-1">Batch / PO Identifier</label>
+                      <input
+                        type="text"
+                        value={ingestBatchRef}
+                        onChange={(e) => setIngestBatchRef(e.target.value)}
+                        required
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-slate-400 font-semibold block mb-1">Voucher Expiry Date</label>
+                      <input
+                        type="date"
+                        value={ingestExpiryDate}
+                        onChange={(e) => setIngestExpiryDate(e.target.value)}
+                        required
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 font-semibold block mb-1">Voucher Codes (1 per line)</label>
+                    <textarea
+                      rows={4}
+                      value={ingestCodesRaw}
+                      onChange={(e) => setIngestCodesRaw(e.target.value)}
+                      placeholder={`HS-SUP-NOV-001\nHS-SUP-NOV-002\nHS-SUP-NOV-003`}
+                      required
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={isIngesting}
+                      className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl flex items-center space-x-2"
+                    >
+                      {isIngesting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
+                      <span>Save Batch to Vault</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Codes Table */}
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-slate-900 text-slate-400 font-sans border-b border-slate-800">
+                    <tr>
+                      <th className="py-3 px-4">SKU</th>
+                      <th className="py-3 px-4">COUPON CODE</th>
+                      <th className="py-3 px-4">BATCH</th>
+                      <th className="py-3 px-4">UPLOAD DATE</th>
+                      <th className="py-3 px-4">EXPIRY DATE</th>
+                      <th className="py-3 px-4">STATUS</th>
+                      <th className="py-3 px-4">CLAIMED BY</th>
+                      <th className="py-3 px-4">ORDER ID</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {vouchers.map((v) => (
+                      <tr key={v.id} className="hover:bg-slate-800/30">
+                        <td className="py-3.5 px-4 font-bold text-blue-400">{v.skuCode}</td>
+                        <td className="py-3.5 px-4 font-bold text-white tracking-wider">{v.code}</td>
+                        <td className="py-3.5 px-4 text-slate-400 font-sans">{v.batchRef}</td>
+                        <td className="py-3.5 px-4 text-slate-400">{v.uploadDate}</td>
+                        <td className="py-3.5 px-4 text-amber-400">{v.expiryDate}</td>
+                        <td className="py-3.5 px-4 font-sans">
+                          {v.status === "AVAILABLE" ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              ● Available
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                              Claimed
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-300">{v.claimedByMsisdn || "—"}</td>
+                        <td className="py-3.5 px-4 text-purple-400">{v.claimedByOrderId || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: DEVELOPER API */}
+          {activeTab === "developer" && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                <Code2 className="w-5 h-5 text-cyan-400" />
+                <span>4. Developer Documentation & API Gateway</span>
+              </h2>
+
+              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-5">
+                <form onSubmit={handleGenerateApiKey} className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs items-end">
+                  <div>
+                    <label className="text-slate-400 font-semibold block mb-1">Token Description</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Cardholder Checkout Gateway"
+                      value={newKeyLabel}
+                      onChange={(e) => setNewKeyLabel(e.target.value)}
+                      required
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 font-semibold block mb-1">Environment</label>
+                    <select
+                      value={newKeyEnv}
+                      onChange={(e) => setNewKeyEnv(e.target.value as any)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-slate-200 focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="sandbox">Sandbox (Testing)</option>
+                      <option value="production">Production (Live Float)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <button
+                      type="submit"
+                      className="w-full py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-xl transition flex items-center justify-center space-x-1.5 shadow-lg shadow-cyan-600/20"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>Generate New API Key</span>
+                    </button>
+                  </div>
+                </form>
+
+                <div className="rounded-xl border border-slate-800 bg-slate-950 overflow-hidden font-mono text-xs">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-900 text-slate-400 font-sans border-b border-slate-800">
+                      <tr>
+                        <th className="py-2.5 px-4">LABEL</th>
+                        <th className="py-2.5 px-4">SECRET TOKEN</th>
+                        <th className="py-2.5 px-4">ENV</th>
+                        <th className="py-2.5 px-4">STATUS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {filteredKeys.map((k) => (
+                        <tr key={k.id} className="hover:bg-slate-900/40">
+                          <td className="py-3 px-4 font-sans font-semibold text-slate-200">{k.keyName}</td>
+                          <td className="py-3 px-4 text-cyan-400 font-mono">{k.secretKey.slice(0, 16)}••••••••</td>
+                          <td className="py-3 px-4 font-sans uppercase text-[10px]">{k.environment}</td>
+                          <td className="py-3 px-4 text-emerald-400 font-semibold">● Active</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: PROVISIONING SANDBOX */}
+          {activeTab === "simulator" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4 text-xs font-sans">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-white text-sm">5. Provisioning Sandbox (Live DB Verification)</h3>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    currentSelectedSku?.fulfillmentType === "DIRECT_API"
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                  }`}>
+                    {currentSelectedSku?.fulfillmentType === "DIRECT_API" ? "⚡ Direct API" : "🎟️ Pre-Loaded Vault Code"}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 font-semibold block mb-1">Select Subscription SKU</label>
+                  <select
+                    value={selectedSkuId}
+                    onChange={(e) => setSelectedSkuId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-slate-200 font-mono"
+                  >
+                    {catalog.map((sku) => (
+                      <option key={sku.id} value={sku.id}>
+                        {sku.name} — ₹{sku.partnerWholesale} ({sku.fulfillmentType === "COUPON_CODE" ? "🎟️ Vault Code" : "⚡ Direct API"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 font-semibold block mb-1">Customer Name</label>
+                  <input
+                    type="text"
+                    value={simName}
+                    onChange={(e) => setSimName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-slate-200"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-400 font-semibold block mb-1">Mobile (MSISDN)</label>
+                    <input
+                      type="text"
+                      value={simPhone}
+                      onChange={(e) => setSimPhone(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-slate-200 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-400 font-semibold block mb-1">Geography</label>
+                    <input
+                      type="text"
+                      value={simCity}
+                      onChange={(e) => setSimCity(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-slate-200"
+                    />
+                  </div>
+                </div>
+
                 <button
-                  onClick={downloadSettlementCSV}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center space-x-2 transition shadow-sm"
+                  onClick={executeSimulation}
+                  disabled={isProvisioning}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition"
                 >
-                  <Download className="w-4 h-4 text-teal-400" />
-                  <span>Download Recon Spreadsheet (.CSV)</span>
+                  {isProvisioning ? "Executing Rails Protocol..." : "Execute Real DB Activation"}
                 </button>
               </div>
+
+              <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs space-y-2">
+                <span className="text-slate-500 text-[11px] block border-b border-slate-800 pb-2">REAL-TIME DB AUDIT STREAM</span>
+                {simLogs.map((log, i) => (
+                  <p key={i} className={log.includes("ASSIGNED") || log.includes("PERSISTED") ? "text-emerald-400 font-bold" : log.includes("FAIL") ? "text-red-400 font-bold" : "text-slate-300"}>
+                    {log}
+                  </p>
+                ))}
+                {lastIssuedCode && (
+                  <div className="p-3 bg-slate-900 border border-amber-500/30 rounded-xl text-amber-300 mt-4">
+                    Assigned Vault Code: <strong className="text-white text-sm">{lastIssuedCode}</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: CUSTOMER 360 */}
+          {activeTab === "customers" && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                <Users className="w-5 h-5 text-teal-400" />
+                <span>6. Customer 360° & Orders (Live PostgreSQL)</span>
+              </h2>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-slate-900/90 text-slate-400 font-semibold border-b border-slate-800 font-sans">
                     <tr>
+                      <th className="py-3 px-4">CUSTOMER</th>
+                      <th className="py-3 px-4">PHONE</th>
+                      <th className="py-3 px-4">GEOGRAPHY</th>
+                      <th className="py-3 px-4">ACTIVE PLANS & DELIVERED CODES</th>
+                      <th className="py-3 px-4 text-right">LIFETIME SPEND</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {customerProfiles.map((cx) => (
+                      <tr key={cx.msisdn} className="hover:bg-slate-800/30">
+                        <td className="py-4 px-4 font-sans font-semibold text-slate-200">{cx.name}</td>
+                        <td className="py-4 px-4 text-blue-400">{cx.msisdn}</td>
+                        <td className="py-4 px-4 text-slate-400 font-sans">{cx.geography}</td>
+                        <td className="py-4 px-4">
+                          <div className="flex flex-wrap gap-1.5">
+                            {cx.subscriptions.map((s, idx) => (
+                              <div key={idx} className="px-2 py-1 rounded bg-slate-800 text-[10px] text-slate-300 border border-slate-700">
+                                <span>{s.skuName}</span>
+                                {s.voucher && <span className="text-amber-400 font-bold ml-1.5">Code: {s.voucher}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-right font-bold text-white">₹{cx.lifetimeSpend.toLocaleString("en-IN")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 7: PREDICTIONS */}
+          {activeTab === "predictions" && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-purple-400" />
+                <span>7. Sales Velocity & Next Steps</span>
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-5 rounded-2xl bg-slate-900/60 border border-blue-500/30 space-y-2">
+                  <span className="text-blue-400 font-bold text-xs">WHOLESALE VOLUME LOCK</span>
+                  <h4 className="font-bold text-white text-sm">Lock Tier-1 Rate for SonyLIV</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Surging at +48% WoW. 18 units away from unlocking upstream ₹715 buy-rate.
+                  </p>
+                </div>
+                <div className="p-5 rounded-2xl bg-slate-900/60 border border-purple-500/30 space-y-2">
+                  <span className="text-purple-400 font-bold text-xs">CROSS-SELL AFFINITY</span>
+                  <h4 className="font-bold text-white text-sm">Activate Swiggy One Bundle</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    73% of SonyLIV holders show high cross-sell affinity for food delivery bundles.
+                  </p>
+                </div>
+                <div className="p-5 rounded-2xl bg-slate-900/60 border border-amber-500/30 space-y-2">
+                  <span className="text-amber-400 font-bold text-xs">FLOAT RUNWAY</span>
+                  <h4 className="font-bold text-white text-sm">Weekend Top-Up Projection</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Available balance covers 4.2 days of run rate.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 8: SETTLEMENT */}
+          {activeTab === "settlement" && (
+            <div className="space-y-6">
+              <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                <FileSpreadsheet className="w-5 h-5 text-rose-400" />
+                <span>8. T+1 Recon & GST Breakdown</span>
+              </h2>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-slate-900 text-slate-400 font-sans border-b border-slate-800">
+                    <tr>
                       <th className="py-3 px-4">INVOICE NO</th>
                       <th className="py-3 px-4">DATE & PARTNER</th>
                       <th className="py-3 px-4">GROSS VOLUME</th>
-                      <th className="py-3 px-4">SUBZO FEE (3%)</th>
+                      <th className="py-3 px-4">SUBZO TAKE RATE (3%)</th>
                       <th className="py-3 px-4">GST (18%)</th>
                       <th className="py-3 px-4">NET DISBURSED</th>
                     </tr>
@@ -1040,116 +1359,6 @@ export default function SubzoPlatform() {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 6: PROVISIONING SANDBOX */}
-          {activeTab === "simulator" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
-                <h3 className="font-bold text-base text-white flex items-center space-x-2">
-                  <CreditCard className="w-5 h-5 text-indigo-400" />
-                  <span>Provisioning Sandbox (Direct PostgreSQL Write)</span>
-                </h3>
-                <div className="space-y-3 pt-2 font-sans text-xs">
-                  <div>
-                    <label className="text-slate-400 font-semibold block mb-1">Customer Full Name</label>
-                    <input
-                      type="text"
-                      value={simName}
-                      onChange={(e) => setSimName(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-slate-200 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-slate-400 font-semibold block mb-1">Mobile Number (MSISDN)</label>
-                      <input
-                        type="text"
-                        value={simPhone}
-                        onChange={(e) => setSimPhone(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 font-mono text-slate-200 focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-slate-400 font-semibold block mb-1">Geography / City</label>
-                      <input
-                        type="text"
-                        value={simCity}
-                        onChange={(e) => setSimCity(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-slate-200 focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-slate-400 font-semibold block mb-1">Customer Email ID (Optional)</label>
-                    <input
-                      type="email"
-                      value={simEmail}
-                      onChange={(e) => setSimEmail(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-slate-200 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-slate-400 font-semibold block mb-1">Subscription SKU</label>
-                    <select
-                      value={selectedSku}
-                      onChange={(e) => setSelectedSku(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 font-mono text-slate-200 focus:outline-none focus:border-blue-500"
-                    >
-                      {catalog.map((sku) => (
-                        <option key={sku.id} value={sku.id}>
-                          {sku.name} — ₹{sku.partnerWholesale}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <button
-                    onClick={executeSimulation}
-                    disabled={isProvisioning}
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-semibold rounded-xl text-sm transition flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/20"
-                  >
-                    {isProvisioning ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Inserting into PostgreSQL...</span>
-                      </>
-                    ) : (
-                      <span>Execute Activation & Save to DB</span>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col font-mono text-xs">
-                <span className="text-slate-500 text-[11px] mb-3 pb-2 border-b border-slate-800">
-                  REAL-TIME DATABASE AUDIT STREAM
-                </span>
-                <div className="space-y-2 flex-1">
-                  {simLogs.length === 0 ? (
-                    <p className="text-slate-600 italic">Click the blue button above to test a direct database write.</p>
-                  ) : (
-                    simLogs.map((log, idx) => (
-                      <p
-                        key={idx}
-                        className={
-                          log.includes("SUCCESS") || log.includes("PERSISTED")
-                            ? "text-emerald-400 font-bold"
-                            : log.includes("DB ERROR")
-                            ? "text-red-400 font-bold"
-                            : "text-slate-300"
-                        }
-                      >
-                        {log}
-                      </p>
-                    ))
-                  )}
-                </div>
               </div>
             </div>
           )}
