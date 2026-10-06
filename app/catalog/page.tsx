@@ -22,7 +22,7 @@ interface CatalogItem {
   duration: string;
   mrp: string;
   status: "Available" | "Coming Soon";
-  logoColor: string;
+  logoUrl: string;
   badgeBg: string;
   description: string;
   features: string[];
@@ -46,7 +46,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹1,099",
       status: "Available",
-      logoColor: "bg-blue-600 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=hotstar.com&sz=128",
       badgeBg: "bg-blue-500/10 text-blue-300 border-blue-500/20",
       description: "JioHotstar delivers live cricket tournaments, premier global sports, Disney+ cinematic hits, HBO originals, and multi-lingual Indian entertainment in Full HD.",
       features: [
@@ -70,7 +70,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹2,199",
       status: "Available",
-      logoColor: "bg-blue-700 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=hotstar.com&sz=128",
       badgeBg: "bg-blue-500/10 text-blue-300 border-blue-500/20",
       description: "The flagship 4K Ultra HD ad-free tier for JioHotstar, allowing 4 concurrent devices across smart televisions, home theatre systems, tablets, and phones.",
       features: [
@@ -93,7 +93,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹1,499",
       status: "Available",
-      logoColor: "bg-amber-500 text-slate-950 font-bold",
+      logoUrl: "https://www.google.com/s2/favicons?domain=primevideo.com&sz=128",
       badgeBg: "bg-amber-500/10 text-amber-300 border-amber-500/20",
       description: "Comprehensive annual subscription bundling Prime Video 4K HDR streaming, unlimited expedited shipping on Amazon, Amazon Music ad-free, and Prime Gaming.",
       features: [
@@ -116,7 +116,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹1,499",
       status: "Available",
-      logoColor: "bg-sky-600 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=sonyliv.com&sz=128",
       badgeBg: "bg-sky-500/10 text-sky-300 border-sky-500/20",
       description: "SonyLIV Premium brings UEFA Champions League, WWE Network, live tennis Grand Slams, Sony entertainment series, and award-winning international cinema.",
       features: [
@@ -139,7 +139,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹699",
       status: "Available",
-      logoColor: "bg-purple-600 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=zee5.com&sz=128",
       badgeBg: "bg-purple-500/10 text-purple-300 border-purple-500/20",
       description: "India's largest multi-lingual storytelling platform featuring over 500+ regional originals, classic Bollywood blockbusters, and 90+ live news and entertainment channels.",
       features: [
@@ -162,7 +162,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹699",
       status: "Available",
-      logoColor: "bg-rose-600 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=aha.video&sz=128",
       badgeBg: "bg-rose-500/10 text-rose-300 border-rose-500/20",
       description: "The 100% native regional Telugu entertainment hub featuring exclusive movie releases, original reality web shows, and regional comedy programs.",
       features: [
@@ -185,7 +185,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹399",
       status: "Available",
-      logoColor: "bg-emerald-600 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=klikk.tv&sz=128",
       badgeBg: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
       description: "Leading regional entertainment service dedicated to Bengali digital cinema, original web series, comedy sketches, animated kids content, and audio stories.",
       features: [
@@ -208,7 +208,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹1,199",
       status: "Available",
-      logoColor: "bg-orange-500 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=swiggy.com&sz=128",
       badgeBg: "bg-orange-500/10 text-orange-300 border-orange-500/20",
       description: "Single membership unlocking benefits across Swiggy: free food deliveries, Instamart grocery perks, Dineout dining discounts, and Genie courier privileges.",
       features: [
@@ -231,7 +231,7 @@ export default function MasterCatalogPage() {
       duration: "3 Months",
       mrp: "₹399",
       status: "Available",
-      logoColor: "bg-orange-600 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=swiggy.com&sz=128",
       badgeBg: "bg-orange-500/10 text-orange-300 border-orange-500/20",
       description: "Quarterly edition of Swiggy's flagship membership pass, ideal for credit card onboarding campaigns and seasonal rewards burn.",
       features: [
@@ -252,7 +252,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹1,199",
       status: "Available",
-      logoColor: "bg-indigo-600 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=timesprime.com&sz=128",
       badgeBg: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
       description: "India's premier bundled digital lifestyle membership combining OTT subscriptions, dining perks, travel discounts, news passes, and health checks in a single account.",
       features: [
@@ -274,7 +274,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹1,990",
       status: "Available",
-      logoColor: "bg-pink-600 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=cult.fit&sz=128",
       badgeBg: "bg-pink-500/10 text-pink-300 border-pink-500/20",
       description: "Unlimited access to daily interactive fitness, yoga, and meditation masterclasses led by India's top celebrity trainers and wellness coaches.",
       features: [
@@ -288,7 +288,7 @@ export default function MasterCatalogPage() {
       ]
     },
 
-    // SaaS & Developer Tools
+    // SaaS & Tools
     {
       id: "notion-plus-12m",
       brand: "Notion",
@@ -297,7 +297,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹9,600",
       status: "Available",
-      logoColor: "bg-slate-900 border border-slate-700 text-white font-serif",
+      logoUrl: "https://www.google.com/s2/favicons?domain=notion.so&sz=128",
       badgeBg: "bg-slate-800 text-slate-300 border-slate-700",
       description: "The connected workspace where better, faster work happens. Notion Plus provides unlimited file uploads, custom automation workflows, and collaborative databases.",
       features: [
@@ -319,7 +319,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹3,999",
       status: "Available",
-      logoColor: "bg-cyan-600 text-white font-bold",
+      logoUrl: "https://www.google.com/s2/favicons?domain=canva.com&sz=128",
       badgeBg: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
       description: "Complete visual design workspace unlocking over 100 million stock photos, premium templates, Magic Studio generative AI tools, and Brand Kits.",
       features: [
@@ -341,7 +341,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹9,800",
       status: "Available",
-      logoColor: "bg-slate-800 border border-slate-600 text-white",
+      logoUrl: "https://www.google.com/s2/favicons?domain=github.com&sz=128",
       badgeBg: "bg-slate-800 text-slate-300 border-slate-700",
       description: "The world's most widely adopted AI developer tool. Delivers multi-file autocompletions, real-time code chat, and unit test generation directly in IDEs.",
       features: [
@@ -364,7 +364,7 @@ export default function MasterCatalogPage() {
       duration: "1 Month Pass",
       mrp: "₹829",
       status: "Available",
-      logoColor: "bg-green-600 text-white font-bold",
+      logoUrl: "https://www.google.com/s2/favicons?domain=xbox.com&sz=128",
       badgeBg: "bg-green-500/10 text-green-300 border-green-500/20",
       description: "The premier subscription for gaming. Play hundreds of high-quality console, PC, and cloud games, plus an EA Play membership and exclusive member discounts.",
       features: [
@@ -387,7 +387,7 @@ export default function MasterCatalogPage() {
       duration: "Digital PIN Card",
       mrp: "₹1,000",
       status: "Available",
-      logoColor: "bg-blue-800 text-white font-bold",
+      logoUrl: "https://www.google.com/s2/favicons?domain=playstation.com&sz=128",
       badgeBg: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
       description: "Official Sony PlayStation Network wallet voucher. Funds can be spent on games, add-on DLCs, PlayStation Plus tiers, and movie rentals.",
       features: [
@@ -408,7 +408,7 @@ export default function MasterCatalogPage() {
       duration: "Digital PIN Card",
       mrp: "₹500",
       status: "Available",
-      logoColor: "bg-slate-900 border border-slate-700 text-cyan-300",
+      logoUrl: "https://www.google.com/s2/favicons?domain=steampowered.com&sz=128",
       badgeBg: "bg-slate-800 text-slate-300 border-slate-700",
       description: "Direct wallet credits for Steam, the leading digital distribution platform for PC gaming. Redeemable against thousands of games, software, and in-game items.",
       features: [
@@ -431,7 +431,7 @@ export default function MasterCatalogPage() {
       duration: "1 Month Pass",
       mrp: "₹1,999",
       status: "Available",
-      logoColor: "bg-teal-600 text-white font-bold",
+      logoUrl: "https://www.google.com/s2/favicons?domain=openai.com&sz=128",
       badgeBg: "bg-teal-500/10 text-teal-300 border-teal-500/20",
       description: "Official OpenAI subscription granting priority access to GPT-4o, advanced voice mode, DALL·E 3 image generation, data analysis, and custom GPT builder.",
       features: [
@@ -453,7 +453,7 @@ export default function MasterCatalogPage() {
       duration: "12 Months",
       mrp: "₹16,500",
       status: "Available",
-      logoColor: "bg-cyan-700 text-white font-bold",
+      logoUrl: "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=128",
       badgeBg: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
       description: "The conversational answer engine that cites verified real-time web sources. Pro unlocks unlimited search queries, file analysis, and choice between leading foundation models.",
       features: [
@@ -469,7 +469,6 @@ export default function MasterCatalogPage() {
     }
   ];
 
-  // Filtering Logic
   const filteredCatalog = fullCatalog.filter((item) => {
     const matchesCategory =
       activeCategory === "ALL" || item.category === activeCategory;
@@ -516,7 +515,6 @@ export default function MasterCatalogPage() {
 
       {/* Catalog Body */}
       <main className="max-w-7xl mx-auto px-6 py-12 space-y-8">
-        {/* Header requested verbatim */}
         <div className="space-y-2 border-b border-slate-800/80 pb-6">
           <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">
             Master Digital Inventory
@@ -531,7 +529,6 @@ export default function MasterCatalogPage() {
 
         {/* Search & Ecosystem Filter Selector */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Ecosystem Pills */}
           <div className="flex items-center space-x-2 overflow-x-auto pb-1">
             {[
               { id: "ALL", label: "All Master SKUs" },
@@ -555,7 +552,6 @@ export default function MasterCatalogPage() {
             ))}
           </div>
 
-          {/* Search Bar */}
           <div className="relative w-full md:w-80">
             <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
             <input
@@ -590,8 +586,17 @@ export default function MasterCatalogPage() {
                 >
                   <td className="py-4 px-5">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${item.logoColor}`}>
-                        {item.brand.charAt(0)}
+                      {/* Crisp Brand Logo in Table */}
+                      <div className="w-8 h-8 rounded-lg bg-slate-950 border border-slate-800 p-1 flex items-center justify-center shrink-0 shadow-sm">
+                        <img
+                          src={item.logoUrl}
+                          alt={item.brand}
+                          className="w-full h-full object-contain rounded"
+                          loading="lazy"
+                          onError={(e: any) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
                       </div>
                       <div>
                         <p className="font-bold text-white group-hover:text-blue-400 transition">{item.brand}</p>
@@ -628,15 +633,28 @@ export default function MasterCatalogPage() {
           </table>
         </div>
 
-        {/* Modal Drawer: Full Brand Specification View */}
+        {/* Modal Drawer: Full Brand Specification View with Logo Watermark */}
         {selectedBrand && (
           <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-7 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-7 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto relative overflow-hidden">
+              {/* Background Modal Logo Watermark */}
+              <div className="absolute -right-8 -bottom-8 w-48 h-48 pointer-events-none opacity-[0.05]">
+                <img
+                  src={selectedBrand.logoUrl}
+                  alt=""
+                  className="w-full h-full object-contain filter grayscale invert"
+                />
+              </div>
+
               {/* Modal Top Bar */}
-              <div className="flex items-start justify-between border-b border-slate-800 pb-4">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-base shadow-lg ${selectedBrand.logoColor}`}>
-                    {selectedBrand.brand.charAt(0)}
+              <div className="flex items-start justify-between border-b border-slate-800 pb-4 relative z-10">
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-950 border border-slate-800 p-2 flex items-center justify-center shadow-lg">
+                    <img
+                      src={selectedBrand.logoUrl}
+                      alt={selectedBrand.brand}
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white">{selectedBrand.brand}</h3>
@@ -652,7 +670,7 @@ export default function MasterCatalogPage() {
               </div>
 
               {/* Brand Description */}
-              <div className="space-y-2">
+              <div className="space-y-2 relative z-10">
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">About the Brand</h4>
                 <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
                   {selectedBrand.description}
@@ -660,7 +678,7 @@ export default function MasterCatalogPage() {
               </div>
 
               {/* Plan Specifications & MRP */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 relative z-10">
                 <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-[10px] uppercase font-bold text-slate-500">Retail Plan MRP</span>
                   <p className="text-2xl font-bold font-mono text-white">{selectedBrand.mrp}</p>
@@ -677,7 +695,7 @@ export default function MasterCatalogPage() {
               </div>
 
               {/* Plan Benefits */}
-              <div className="space-y-2">
+              <div className="space-y-2 relative z-10">
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Plan Inclusions & Benefits</h4>
                 <ul className="space-y-2 text-xs text-slate-300">
                   {selectedBrand.features.map((feat, idx) => (
@@ -690,7 +708,7 @@ export default function MasterCatalogPage() {
               </div>
 
               {/* Terms and Conditions (T&C) */}
-              <div className="space-y-2">
+              <div className="space-y-2 relative z-10">
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Terms & Conditions (T&C)</h4>
                 <div className="p-4 rounded-2xl bg-slate-950/40 border border-slate-800/80 text-[11px] text-slate-400 space-y-1.5">
                   {selectedBrand.termsAndConditions.map((tc, idx) => (
@@ -700,7 +718,7 @@ export default function MasterCatalogPage() {
               </div>
 
               {/* Modal CTA */}
-              <div className="pt-2 flex justify-end space-x-3">
+              <div className="pt-2 flex justify-end space-x-3 relative z-10">
                 <Link
                   href="/#callback"
                   onClick={() => setSelectedBrand(null)}

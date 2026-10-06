@@ -125,66 +125,281 @@ export default function SubzoLandingPage() {
     }
   ];
 
+  // Master Brands with verified CDN logo sources
   const allMasterBrands = [
     // Streaming & OTT
-    { name: "JioHotstar", category: "OTT", plan: "Super & Premium 12M", badge: "Instant MSISDN / Voucher", content: "Cricket, HBO, Disney+ & regional blockbusters with 4K multi-screen support.", bg: "bg-blue-950/25 border-blue-500/25 hover:border-blue-400/50 hover:bg-blue-900/30", color: "text-blue-300", badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20", priority: 1 },
-    { name: "Amazon Prime", category: "OTT", plan: "Annual Full Access Membership", badge: "Voucher Delivery", content: "Prime Video 4K HDR streaming, free expedited shipping & Prime Music bundled.", bg: "bg-amber-950/25 border-amber-500/25 hover:border-amber-400/50 hover:bg-amber-900/30", color: "text-amber-300", badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20", priority: 2 },
-    { name: "SonyLIV", category: "OTT", plan: "12M Premium All Access", badge: "Direct OTT Provision", content: "UEFA Champions League, WWE Network, international movies & Sony originals.", bg: "bg-sky-950/25 border-sky-500/25 hover:border-sky-400/50 hover:bg-sky-900/30", color: "text-sky-300", badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20", priority: 3 },
-    { name: "ZEE5", category: "OTT", plan: "All Access Annual", badge: "Instant Activation", content: "500+ regional original series, live TV news, and expansive Indian cinema library.", bg: "bg-purple-950/25 border-purple-500/25 hover:border-purple-400/50 hover:bg-purple-900/30", color: "text-purple-300", badgeColor: "bg-purple-500/10 text-purple-300 border-purple-500/20", priority: 4 },
-    { name: "Aha Video", category: "OTT", plan: "Gold & Annual Telugu/Tamil", badge: "Direct Provision", content: "100% native regional Telugu & Tamil movies, exclusive chat shows, and theater hits.", bg: "bg-rose-950/25 border-rose-500/25 hover:border-rose-400/50 hover:bg-rose-900/30", color: "text-rose-300", badgeColor: "bg-rose-500/10 text-rose-300 border-rose-500/20", priority: 6 },
-    { name: "Klikk", category: "OTT", plan: "Regional 12M Subscription", badge: "Instant Voucher", content: "Leading Bengali entertainment streaming hub with original web series and classics.", bg: "bg-emerald-950/25 border-emerald-500/25 hover:border-emerald-400/50 hover:bg-emerald-900/30", color: "text-emerald-300", badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20", priority: 7 },
-    { name: "Lionsgate Play", category: "OTT", plan: "Annual All Access", badge: "Direct Provision", content: "Hollywood action blockbusters, Starz originals, and international award winners.", bg: "bg-slate-900/40 border-slate-700/40 hover:border-slate-500", color: "text-slate-200", badgeColor: "bg-slate-800 text-slate-300 border-slate-700", priority: 11 },
-    { name: "Sun NXT", category: "OTT", plan: "Annual South Premium", badge: "Instant Voucher", content: "4000+ South Indian movies, Sun TV serials, music videos and live channels.", bg: "bg-orange-950/20 border-orange-500/20 hover:border-orange-500/40", color: "text-orange-400", badgeColor: "bg-orange-500/10 text-orange-400 border-orange-500/20", priority: 12 },
-    { name: "Chaupal", category: "OTT", plan: "Annual Regional Trio", badge: "Instant Voucher", content: "Punjabi, Haryanvi, and Bhojpuri regional cinema and original streaming series.", bg: "bg-yellow-950/20 border-yellow-500/20 hover:border-yellow-500/40", color: "text-yellow-400", badgeColor: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20", priority: 13 },
-    { name: "Discovery+ Premium", category: "OTT", plan: "Annual All Access", badge: "Direct Provision", content: "Factual entertainment, science, nature documentaries, and global live motorsports.", bg: "bg-blue-950/20 border-blue-500/20 hover:border-blue-500/40", color: "text-blue-300", badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20", priority: 14 },
+    {
+      name: "JioHotstar",
+      category: "OTT",
+      plan: "Super & Premium 12M",
+      badge: "Instant MSISDN / Voucher",
+      content: "Cricket, HBO, Disney+ & regional blockbusters with 4K multi-screen support.",
+      bg: "bg-blue-950/25 border-blue-500/25 hover:border-blue-400/50 hover:bg-blue-900/30",
+      color: "text-blue-300",
+      badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=hotstar.com&sz=128",
+      priority: 1
+    },
+    {
+      name: "Amazon Prime",
+      category: "OTT",
+      plan: "Annual Full Access Membership",
+      badge: "Voucher Delivery",
+      content: "Prime Video 4K HDR streaming, free expedited shipping & Prime Music bundled.",
+      bg: "bg-amber-950/25 border-amber-500/25 hover:border-amber-400/50 hover:bg-amber-900/30",
+      color: "text-amber-300",
+      badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=primevideo.com&sz=128",
+      priority: 2
+    },
+    {
+      name: "SonyLIV",
+      category: "OTT",
+      plan: "12M Premium All Access",
+      badge: "Direct OTT Provision",
+      content: "UEFA Champions League, WWE Network, international movies & Sony originals.",
+      bg: "bg-sky-950/25 border-sky-500/25 hover:border-sky-400/50 hover:bg-sky-900/30",
+      color: "text-sky-300",
+      badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=sonyliv.com&sz=128",
+      priority: 3
+    },
+    {
+      name: "ZEE5",
+      category: "OTT",
+      plan: "All Access Annual",
+      badge: "Instant Activation",
+      content: "500+ regional original series, live TV news, and expansive Indian cinema library.",
+      bg: "bg-purple-950/25 border-purple-500/25 hover:border-purple-400/50 hover:bg-purple-900/30",
+      color: "text-purple-300",
+      badgeColor: "bg-purple-500/10 text-purple-300 border-purple-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=zee5.com&sz=128",
+      priority: 4
+    },
+    {
+      name: "Aha Video",
+      category: "OTT",
+      plan: "Gold & Annual Telugu/Tamil",
+      badge: "Direct Provision",
+      content: "100% native regional Telugu & Tamil movies, exclusive chat shows, and theater hits.",
+      bg: "bg-rose-950/25 border-rose-500/25 hover:border-rose-400/50 hover:bg-rose-900/30",
+      color: "text-rose-300",
+      badgeColor: "bg-rose-500/10 text-rose-300 border-rose-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=aha.video&sz=128",
+      priority: 6
+    },
+    {
+      name: "Klikk",
+      category: "OTT",
+      plan: "Regional 12M Subscription",
+      badge: "Instant Voucher",
+      content: "Leading Bengali entertainment streaming hub with original web series and classics.",
+      bg: "bg-emerald-950/25 border-emerald-500/25 hover:border-emerald-400/50 hover:bg-emerald-900/30",
+      color: "text-emerald-300",
+      badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=klikk.tv&sz=128",
+      priority: 7
+    },
+    {
+      name: "Lionsgate Play",
+      category: "OTT",
+      plan: "Annual All Access",
+      badge: "Direct Provision",
+      content: "Hollywood action blockbusters, Starz originals, and international award winners.",
+      bg: "bg-slate-900/40 border-slate-700/40 hover:border-slate-500",
+      color: "text-slate-200",
+      badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+      logoUrl: "https://www.google.com/s2/favicons?domain=lionsgateplay.com&sz=128",
+      priority: 11
+    },
+    {
+      name: "Sun NXT",
+      category: "OTT",
+      plan: "Annual South Premium",
+      badge: "Instant Voucher",
+      content: "4000+ South Indian movies, Sun TV serials, music videos and live channels.",
+      bg: "bg-orange-950/20 border-orange-500/20 hover:border-orange-500/40",
+      color: "text-orange-400",
+      badgeColor: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=sunnxt.com&sz=128",
+      priority: 12
+    },
+    {
+      name: "Discovery+ Premium",
+      category: "OTT",
+      plan: "Annual All Access",
+      badge: "Direct Provision",
+      content: "Factual entertainment, science, nature documentaries, and global live motorsports.",
+      bg: "bg-blue-950/20 border-blue-500/20 hover:border-blue-500/40",
+      color: "text-blue-300",
+      badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=discoveryplus.in&sz=128",
+      priority: 14
+    },
 
     // Everyday Lifestyle
-    { name: "Swiggy One", category: "LIFESTYLE", plan: "3M & 12M Membership", badge: "Encrypted Coupon", content: "Unlimited free food deliveries, Instamart grocery perks & Dineout dining discounts.", bg: "bg-orange-950/25 border-orange-500/25 hover:border-orange-400/50 hover:bg-orange-900/30", color: "text-orange-300", badgeColor: "bg-orange-500/10 text-orange-300 border-orange-500/20", priority: 5 },
-    { name: "Zomato Gold", category: "LIFESTYLE", plan: "VIP Dining & Delivery", badge: "Voucher PIN", content: "Free food delivery, up to 40% off on dining out, and exclusive VIP rush hour perks.", bg: "bg-red-950/25 border-red-500/25 hover:border-red-400/50", color: "text-red-300", badgeColor: "bg-red-500/10 text-red-300 border-red-500/20", priority: 15 },
-    { name: "Times Prime", category: "LIFESTYLE", plan: "All-in-One Annual Pass", badge: "Master Voucher", content: "Bundled subscriptions covering OTT, news, dining, travel, and healthcare perks.", bg: "bg-indigo-950/25 border-indigo-500/25 hover:border-indigo-400/50", color: "text-indigo-300", badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20", priority: 16 },
-    { name: "Cultpass Live", category: "LIFESTYLE", plan: "Annual Fitness & Mind", badge: "Direct Provision", content: "Unlimited live workout sessions, daily meditation classes, and fitness tracking.", bg: "bg-pink-950/20 border-pink-500/20 hover:border-pink-500/40", color: "text-pink-300", badgeColor: "bg-pink-500/10 text-pink-300 border-pink-500/20", priority: 17 },
-    { name: "BookMyShow Stream", category: "LIFESTYLE", plan: "Cinema Voucher Pass", badge: "Encrypted Code", content: "Movie premiere digital rentals, theatre cinema vouchers, and live event passes.", bg: "bg-rose-950/20 border-rose-500/20 hover:border-rose-500/40", color: "text-rose-400", badgeColor: "bg-rose-500/10 text-rose-400 border-rose-500/20", priority: 18 },
-    { name: "MakeMyTrip Black", category: "LIFESTYLE", plan: "VIP Travel Tier", badge: "Direct Provision", content: "Complimentary flight cancellations, airport lounge passes, and room upgrades.", bg: "bg-red-950/20 border-red-500/20 hover:border-red-500/40", color: "text-red-300", badgeColor: "bg-red-500/10 text-red-300 border-red-500/20", priority: 19 },
-    { name: "Uber One", category: "LIFESTYLE", plan: "Quarterly Mobility Pass", badge: "Instant Code", content: "Ride discounts, zero cancellation charges, and priority airport ride dispatching.", bg: "bg-slate-900 border-slate-700 hover:border-slate-500", color: "text-slate-100", badgeColor: "bg-slate-800 text-slate-300 border-slate-700", priority: 20 },
-    { name: "Blinkit VIP", category: "LIFESTYLE", plan: "Instant Grocery Pass", badge: "Coupon Lock", content: "Free instant 10-minute delivery, festival priority slots, and cashbacks.", bg: "bg-yellow-950/20 border-yellow-500/20 hover:border-yellow-500/40", color: "text-yellow-300", badgeColor: "bg-yellow-500/10 text-yellow-300 border-yellow-500/20", priority: 21 },
-    { name: "Practo Plus", category: "LIFESTYLE", plan: "Annual Health Plan", badge: "Direct Provision", content: "Unlimited 24x7 doctor consultations for the entire family with zero waiting time.", bg: "bg-teal-950/20 border-teal-500/20 hover:border-teal-500/40", color: "text-teal-300", badgeColor: "bg-teal-500/10 text-teal-300 border-teal-500/20", priority: 22 },
-    { name: "Pharmeasy Plus", category: "LIFESTYLE", plan: "Annual Healthcare Pass", badge: "Encrypted Code", content: "Free medicine delivery, cashbacks, and complimentary diagnostic lab health checkups.", bg: "bg-emerald-950/20 border-emerald-500/20 hover:border-emerald-500/40", color: "text-emerald-400", badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", priority: 23 },
+    {
+      name: "Swiggy One",
+      category: "LIFESTYLE",
+      plan: "3M & 12M Membership",
+      badge: "Encrypted Coupon",
+      content: "Unlimited free food deliveries, Instamart grocery perks & Dineout dining discounts.",
+      bg: "bg-orange-950/25 border-orange-500/25 hover:border-orange-400/50 hover:bg-orange-900/30",
+      color: "text-orange-300",
+      badgeColor: "bg-orange-500/10 text-orange-300 border-orange-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=swiggy.com&sz=128",
+      priority: 5
+    },
+    {
+      name: "Zomato Gold",
+      category: "LIFESTYLE",
+      plan: "VIP Dining & Delivery",
+      badge: "Voucher PIN",
+      content: "Free food delivery, up to 40% off on dining out, and exclusive VIP rush hour perks.",
+      bg: "bg-red-950/25 border-red-500/25 hover:border-red-400/50",
+      color: "text-red-300",
+      badgeColor: "bg-red-500/10 text-red-300 border-red-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=zomato.com&sz=128",
+      priority: 15
+    },
+    {
+      name: "Times Prime",
+      category: "LIFESTYLE",
+      plan: "All-in-One Annual Pass",
+      badge: "Master Voucher",
+      content: "Bundled subscriptions covering OTT, news, dining, travel, and healthcare perks.",
+      bg: "bg-indigo-950/25 border-indigo-500/25 hover:border-indigo-400/50",
+      color: "text-indigo-300",
+      badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=timesprime.com&sz=128",
+      priority: 16
+    },
+    {
+      name: "Cult.fit",
+      category: "LIFESTYLE",
+      plan: "Cultpass Live Annual",
+      badge: "Direct Provision",
+      content: "Unlimited live workout sessions, daily meditation classes, and fitness tracking.",
+      bg: "bg-pink-950/20 border-pink-500/20 hover:border-pink-500/40",
+      color: "text-pink-300",
+      badgeColor: "bg-pink-500/10 text-pink-300 border-pink-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=cult.fit&sz=128",
+      priority: 17
+    },
+    {
+      name: "BookMyShow",
+      category: "LIFESTYLE",
+      plan: "Stream Cinema Pass",
+      badge: "Encrypted Code",
+      content: "Movie premiere digital rentals, theatre cinema vouchers, and live event passes.",
+      bg: "bg-rose-950/20 border-rose-500/20 hover:border-rose-500/40",
+      color: "text-rose-400",
+      badgeColor: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=bookmyshow.com&sz=128",
+      priority: 18
+    },
 
-    // SaaS & Developer Tools
-    { name: "GitHub Copilot", category: "SAAS", plan: "Individual & Business Pass", badge: "Corporate API Token", content: "AI pair programmer supporting all IDEs with code autocompletion and unit test generation.", bg: "bg-slate-900/60 border-slate-700 hover:border-slate-500", color: "text-slate-100", badgeColor: "bg-slate-800 text-slate-300 border-slate-700", priority: 24 },
-    { name: "Notion Plus", category: "SAAS", plan: "Annual Workspace Pass", badge: "Direct Seat Grant", content: "Unlimited file uploads, custom automation workflows, and collaborative databases.", bg: "bg-slate-900 border-slate-800 hover:border-slate-600", color: "text-slate-200", badgeColor: "bg-slate-800 text-slate-300 border-slate-700", priority: 25 },
-    { name: "Canva Pro", category: "SAAS", plan: "Annual Creative Suite", badge: "Instant Key", content: "100M+ premium stock assets, brand kits, AI magic resizing, and background removal.", bg: "bg-cyan-950/25 border-cyan-500/25 hover:border-cyan-400/50", color: "text-cyan-300", badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20", priority: 26 },
-    { name: "Grammarly Business", category: "SAAS", plan: "Annual Writing Assistant", badge: "License Code", content: "Tone adjustments, generative writing suggestions, style guides, and plagiarism scans.", bg: "bg-emerald-950/25 border-emerald-500/25 hover:border-emerald-400/50", color: "text-emerald-300", badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20", priority: 27 },
-    { name: "Figma Professional", category: "SAAS", plan: "Annual Design Workspace", badge: "Seat Provision", content: "Unlimited version history, shared team component libraries, and dev mode tools.", bg: "bg-purple-950/20 border-purple-500/20 hover:border-purple-500/40", color: "text-purple-300", badgeColor: "bg-purple-500/10 text-purple-300 border-purple-500/20", priority: 28 },
-    { name: "1Password Teams", category: "SAAS", plan: "Annual Security Vault", badge: "Enterprise Voucher", content: "Zero-knowledge credential vaulting, watchtower alerts, and biometrics login.", bg: "bg-blue-950/20 border-blue-500/20 hover:border-blue-500/40", color: "text-blue-300", badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20", priority: 29 },
-    { name: "Zoom One Pro", category: "SAAS", plan: "Annual Video Conferencing", badge: "Direct Seat", content: "30-hour meeting limits, AI Companion summaries, and 5GB cloud recording storage.", bg: "bg-sky-950/20 border-sky-500/20 hover:border-sky-500/40", color: "text-sky-300", badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20", priority: 30 },
-    { name: "Linear Standard", category: "SAAS", plan: "Annual Issue Tracker", badge: "License Key", content: "Keyboard-first issue tracker, sprint planning cycles, and roadmaps.", bg: "bg-indigo-950/20 border-indigo-500/20 hover:border-indigo-500/40", color: "text-indigo-300", badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20", priority: 31 },
-    { name: "Loom Business", category: "SAAS", plan: "Annual Async Video", badge: "Seat Grant", content: "Unlimited video recordings, custom branding, viewer insights, and AI transcription.", bg: "bg-purple-950/20 border-purple-500/20 hover:border-purple-500/40", color: "text-purple-300", badgeColor: "bg-purple-500/10 text-purple-300 border-purple-500/20", priority: 32 },
-    { name: "Superhuman", category: "SAAS", plan: "Annual High-Speed Email", badge: "Invite Token", content: "Blazing-fast email workflow with AI triage, instant split inboxes, and reminders.", bg: "bg-amber-950/20 border-amber-500/20 hover:border-amber-500/40", color: "text-amber-300", badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20", priority: 33 },
+    // SaaS & Tools
+    {
+      name: "GitHub Copilot",
+      category: "SAAS",
+      plan: "Individual & Business Pass",
+      badge: "Corporate API Token",
+      content: "AI pair programmer supporting all IDEs with code autocompletion and unit test generation.",
+      bg: "bg-slate-900/60 border-slate-700 hover:border-slate-500",
+      color: "text-slate-100",
+      badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+      logoUrl: "https://www.google.com/s2/favicons?domain=github.com&sz=128",
+      priority: 24
+    },
+    {
+      name: "Notion Plus",
+      category: "SAAS",
+      plan: "Annual Workspace Pass",
+      badge: "Direct Seat Grant",
+      content: "Unlimited file uploads, custom automation workflows, and collaborative databases.",
+      bg: "bg-slate-900 border-slate-800 hover:border-slate-600",
+      color: "text-slate-200",
+      badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+      logoUrl: "https://www.google.com/s2/favicons?domain=notion.so&sz=128",
+      priority: 25
+    },
+    {
+      name: "Canva Pro",
+      category: "SAAS",
+      plan: "Annual Creative Suite",
+      badge: "Instant Key",
+      content: "100M+ premium stock assets, brand kits, AI magic resizing, and background removal.",
+      bg: "bg-cyan-950/25 border-cyan-500/25 hover:border-cyan-400/50",
+      color: "text-cyan-300",
+      badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=canva.com&sz=128",
+      priority: 26
+    },
 
     // Gaming Ecosystems
-    { name: "Xbox Game Pass", category: "GAMING", plan: "Ultimate & Core (PC/Console)", badge: "Digital Code Vault", content: "Day-one access to iconic franchises, EA Play catalog, and cloud gaming library.", bg: "bg-green-950/25 border-green-500/25 hover:border-green-400/50 hover:bg-green-900/30", color: "text-green-300", badgeColor: "bg-green-500/10 text-green-300 border-green-500/20", priority: 8 },
-    { name: "PlayStation (PSN)", category: "GAMING", plan: "Wallet Top-up & Plus", badge: "Instant PIN Issue", content: "Online multiplayer access, monthly games catalog, and official PS Store credit.", bg: "bg-indigo-950/25 border-indigo-500/25 hover:border-indigo-400/50 hover:bg-indigo-900/30", color: "text-indigo-300", badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20", priority: 9 },
-    { name: "Steam Wallet", category: "GAMING", plan: "Global Digital Gift Card", badge: "Encrypted PIN", content: "Direct Steam currency vouchers redeemable for thousands of PC game titles and DLCs.", bg: "bg-slate-900 border-slate-700 hover:border-slate-500", color: "text-slate-200", badgeColor: "bg-slate-800 text-slate-300 border-slate-700", priority: 34 },
-    { name: "Riot Access PIN", category: "GAMING", plan: "Valorant & LoL Points", badge: "Digital Code", content: "Official Riot Points code for in-game skins, battle passes, and weapon packs.", bg: "bg-red-950/20 border-red-500/20 hover:border-red-500/40", color: "text-red-400", badgeColor: "bg-red-500/10 text-red-400 border-red-500/20", priority: 35 },
-    { name: "Nintendo eShop", category: "GAMING", plan: "Prepaid Digital Card", badge: "Vault PIN", content: "Download classic Nintendo Switch titles, indie hits, and DLCs straight to console.", bg: "bg-red-950/20 border-red-500/20 hover:border-red-500/40", color: "text-red-300", badgeColor: "bg-red-500/10 text-red-300 border-red-500/20", priority: 36 },
-    { name: "Roblox Gift Code", category: "GAMING", plan: "Robux & Virtual Items", badge: "Instant PIN", content: "In-game virtual currency for game upgrades, accessories, and avatar customisation.", bg: "bg-slate-900 border-slate-800 hover:border-slate-600", color: "text-slate-300", badgeColor: "bg-slate-800 text-slate-400 border-slate-700", priority: 37 },
-    { name: "Discord Nitro", category: "GAMING", plan: "Monthly & Annual Pass", badge: "Gift Link API", content: "500MB file uploads, custom HD streaming, emoji everywhere, and 2 Server Boosts.", bg: "bg-indigo-950/20 border-indigo-500/20 hover:border-indigo-500/40", color: "text-indigo-400", badgeColor: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20", priority: 38 },
-    { name: "Battle.net Balance", category: "GAMING", plan: "Blizzard Digital Card", badge: "Instant PIN", content: "Purchase World of Warcraft game time, Diablo bundles, and Call of Duty items.", bg: "bg-blue-950/20 border-blue-500/20 hover:border-blue-500/40", color: "text-blue-300", badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20", priority: 39 },
-    { name: "Apple App Store", category: "GAMING", plan: "Universal Media Card", badge: "Digital Code", content: "Direct redemption for mobile gaming microtransactions and Apple Arcade passes.", bg: "bg-slate-900 border-slate-700 hover:border-slate-500", color: "text-slate-100", badgeColor: "bg-slate-800 text-slate-300 border-slate-700", priority: 40 },
-    { name: "Google Play Card", category: "GAMING", plan: "Android Gaming Code", badge: "Instant PIN", content: "In-app purchases, Android mobile battle passes, and premium mobile games.", bg: "bg-emerald-950/20 border-emerald-500/20 hover:border-emerald-500/40", color: "text-emerald-300", badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20", priority: 41 },
+    {
+      name: "Xbox Game Pass",
+      category: "GAMING",
+      plan: "Ultimate & Core (PC/Console)",
+      badge: "Digital Code Vault",
+      content: "Day-one access to iconic franchises, EA Play catalog, and cloud gaming library.",
+      bg: "bg-green-950/25 border-green-500/25 hover:border-green-400/50 hover:bg-green-900/30",
+      color: "text-green-300",
+      badgeColor: "bg-green-500/10 text-green-300 border-green-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=xbox.com&sz=128",
+      priority: 8
+    },
+    {
+      name: "PlayStation (PSN)",
+      category: "GAMING",
+      plan: "Wallet Top-up & Plus",
+      badge: "Instant PIN Issue",
+      content: "Online multiplayer access, monthly games catalog, and official PS Store credit.",
+      bg: "bg-indigo-950/25 border-indigo-500/25 hover:border-indigo-400/50 hover:bg-indigo-900/30",
+      color: "text-indigo-300",
+      badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=playstation.com&sz=128",
+      priority: 9
+    },
+    {
+      name: "Steam Wallet",
+      category: "GAMING",
+      plan: "Global Digital Gift Card",
+      badge: "Encrypted PIN",
+      content: "Direct Steam currency vouchers redeemable for thousands of PC game titles and DLCs.",
+      bg: "bg-slate-900 border-slate-700 hover:border-slate-500",
+      color: "text-slate-200",
+      badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+      logoUrl: "https://www.google.com/s2/favicons?domain=steampowered.com&sz=128",
+      priority: 34
+    },
 
     // Frontier AI Suites
-    { name: "AI Subscriptions", category: "AI", plan: "ChatGPT Plus / Perplexity / Gemini", badge: "Corporate API Keys", content: "Frontier multimodal reasoning, developer workspaces, and research assistance tools.", bg: "bg-teal-950/25 border-teal-500/25 hover:border-teal-400/50 hover:bg-teal-900/30", color: "text-teal-300", badgeColor: "bg-teal-500/10 text-teal-300 border-teal-500/20", priority: 10 },
-    { name: "ChatGPT Plus", category: "AI", plan: "OpenAI Multimodal 1M Pass", badge: "Corporate Key", content: "Advanced voice mode, GPT-4o image generation, custom GPTs, and data analysis.", bg: "bg-teal-950/25 border-teal-500/25 hover:border-teal-400/50", color: "text-teal-300", badgeColor: "bg-teal-500/10 text-teal-300 border-teal-500/20", priority: 42 },
-    { name: "Perplexity Pro", category: "AI", plan: "Annual Research Engine", badge: "Master Voucher", content: "Unlimited Pro queries, multi-model switcher (Claude, Sonar, GPT-4o), and file analysis.", bg: "bg-cyan-950/25 border-cyan-500/25 hover:border-cyan-400/50", color: "text-cyan-300", badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20", priority: 43 },
-    { name: "Claude Pro", category: "AI", plan: "Anthropic Enterprise Seat", badge: "Seat Grant", content: "Extended 200K token reasoning window, Projects workspace, and code synthesis.", bg: "bg-amber-950/20 border-amber-500/20 hover:border-amber-500/40", color: "text-amber-300", badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20", priority: 44 },
-    { name: "Midjourney Pro", category: "AI", plan: "Creative Imaging Pass", badge: "Access Token", content: "Relaxed & Fast GPU hours, stealth mode generation, and high-resolution upscales.", bg: "bg-indigo-950/20 border-indigo-500/20 hover:border-indigo-500/40", color: "text-indigo-300", badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20", priority: 45 },
-    { name: "Cursor Pro", category: "AI", plan: "AI Code Editor Pass", badge: "License Code", content: "Fast code completions, multi-file codebase reasoning, and inline smart diffs.", bg: "bg-slate-900 border-slate-700 hover:border-slate-500", color: "text-slate-100", badgeColor: "bg-slate-800 text-slate-300 border-slate-700", priority: 46 },
-    { name: "ElevenLabs Creator", category: "AI", plan: "Voice & Speech Synthesis", badge: "API Allowance", content: "Human-grade voice cloning, multilingual voice generation, and audio dubbing.", bg: "bg-violet-950/20 border-violet-500/20 hover:border-violet-500/40", color: "text-violet-300", badgeColor: "bg-violet-500/10 text-violet-300 border-violet-500/20", priority: 47 },
-    { name: "Runway Gen-3", category: "AI", plan: "Creative Video Generator", badge: "Credits Bundle", content: "High-fidelity cinematic text-to-video, motion brush control, and video stylisation.", bg: "bg-rose-950/20 border-rose-500/20 hover:border-rose-500/40", color: "text-rose-300", badgeColor: "bg-rose-500/10 text-rose-300 border-rose-500/20", priority: 48 },
-    { name: "Otter.ai Business", category: "AI", plan: "Annual Meeting Intelligence", badge: "Direct Seat", content: "Automated meeting notes, real-time transcription, and automated action summaries.", bg: "bg-blue-950/20 border-blue-500/20 hover:border-blue-500/40", color: "text-blue-300", badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20", priority: 49 },
-    { name: "Grammarly AI", category: "AI", plan: "Generative Professional", badge: "License Key", content: "Context-aware co-writing, tone calibration, and enterprise-grade privacy protection.", bg: "bg-emerald-950/20 border-emerald-500/20 hover:border-emerald-500/40", color: "text-emerald-300", badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20", priority: 50 },
+    {
+      name: "ChatGPT Plus",
+      category: "AI",
+      plan: "OpenAI Multimodal Pass",
+      badge: "Corporate Key",
+      content: "Advanced voice mode, GPT-4o image generation, custom GPTs, and data analysis.",
+      bg: "bg-teal-950/25 border-teal-500/25 hover:border-teal-400/50",
+      color: "text-teal-300",
+      badgeColor: "bg-teal-500/10 text-teal-300 border-teal-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=openai.com&sz=128",
+      priority: 10
+    },
+    {
+      name: "Perplexity Pro",
+      category: "AI",
+      plan: "Annual Research Engine",
+      badge: "Master Voucher",
+      content: "Unlimited Pro queries, multi-model switcher (Claude, Sonar, GPT-4o), and file analysis.",
+      bg: "bg-cyan-950/25 border-cyan-500/25 hover:border-cyan-400/50",
+      color: "text-cyan-300",
+      badgeColor: "bg-cyan-500/10 text-cyan-300 border-cyan-500/20",
+      logoUrl: "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=128",
+      priority: 43
+    }
   ];
 
   const filteredBrands =
@@ -296,7 +511,7 @@ export default function SubzoLandingPage() {
         </div>
       </section>
 
-      {/* Brand Catalog Preview */}
+      {/* Brand Catalog Preview with Real Brand Logos as Watermarks */}
       <section id="brands" className="py-20 border-b border-slate-800/50 max-w-7xl mx-auto px-6">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
           <div>
@@ -307,7 +522,6 @@ export default function SubzoLandingPage() {
             </p>
           </div>
 
-          {/* Clean Ecosystem Filter Selector */}
           <div className="flex items-center space-x-2 overflow-x-auto pb-1">
             {[
               { id: "ALL", label: "All Master SKUs" },
@@ -332,27 +546,51 @@ export default function SubzoLandingPage() {
           </div>
         </div>
 
-        {/* Dynamic Brand Cards Grid */}
+        {/* Dynamic Brand Cards with Logo Watermarks & Logo Badges */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
           {filteredBrands.map((brand, idx) => (
             <div
               key={idx}
-              className={`p-5 rounded-2xl border backdrop-blur-md flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 shadow-lg ${brand.bg}`}
+              className={`p-5 rounded-2xl border backdrop-blur-md flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 shadow-lg relative overflow-hidden group ${brand.bg}`}
             >
-              <div>
+              {/* Background Logo Watermark */}
+              <div className="absolute -right-4 -bottom-4 w-28 h-28 pointer-events-none opacity-[0.07] group-hover:opacity-[0.14] group-hover:scale-110 transition-all duration-300">
+                <img
+                  src={brand.logoUrl}
+                  alt=""
+                  className="w-full h-full object-contain filter grayscale invert"
+                  loading="lazy"
+                />
+              </div>
+
+              <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
-                  <span className={`text-base font-extrabold tracking-tight ${brand.color}`}>
-                    {brand.name}
-                  </span>
+                  <div className="flex items-center space-x-2.5">
+                    {/* Brand Logo Avatar */}
+                    <div className="w-7 h-7 rounded-lg bg-slate-950/80 border border-slate-800 p-1 flex items-center justify-center shrink-0 shadow-sm">
+                      <img
+                        src={brand.logoUrl}
+                        alt={brand.name}
+                        className="w-full h-full object-contain rounded"
+                        loading="lazy"
+                        onError={(e: any) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    </div>
+                    <span className={`text-base font-extrabold tracking-tight ${brand.color}`}>
+                      {brand.name}
+                    </span>
+                  </div>
                   <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${brand.badgeColor}`}>
                     {brand.category}
                   </span>
                 </div>
-                <p className="text-xs font-semibold text-slate-200">{brand.plan}</p>
+                <p className="text-xs font-semibold text-slate-200 mt-1">{brand.plan}</p>
                 <p className="text-[11px] text-slate-300/80 mt-2 leading-relaxed">{brand.content}</p>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-300">
+              <div className="mt-5 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-300 relative z-10">
                 <span>{brand.badge}</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400"></span>
               </div>
