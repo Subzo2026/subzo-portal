@@ -14,12 +14,16 @@ import {
   Award,
   CreditCard,
   Copy,
-  Check
+  Check,
+  Tv,
+  Gamepad2,
+  Bot,
+  Utensils
 } from "lucide-react";
 
 export default function SubzoLandingPage() {
   const [copied, setCopied] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<"ALL" | "OTT" | "GAMING" | "LIFESTYLE" | "AI">("ALL");
+  const [selectedCategory, setSelectedCategory] = useState<"ALL" | "OTT" | "LIFESTYLE" | "GAMING" | "AI">("ALL");
 
   const copySnippet = () => {
     navigator.clipboard.writeText(`curl -X POST https://subzo.in/api/provision \\
@@ -30,17 +34,142 @@ export default function SubzoLandingPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const platforms = [
+    {
+      title: "Fintech & Cards",
+      icon: CreditCard,
+      description:
+        "Beyond activation milestone perks, power a native in-app subscription hub via Subzo API & SDK. Enable cardholders to discover, purchase, auto-renew, and split subscriptions using credit cards, UPI, or reward balances.",
+      bg: "bg-blue-950/20 border-blue-500/20 hover:border-blue-500/40 hover:bg-blue-950/30",
+      iconBg: "bg-blue-500/10 text-blue-400 border-blue-500/20"
+    },
+    {
+      title: "Loyalty & Rewards",
+      icon: Award,
+      description:
+        "Enable frictionless 1-click points-to-perks redemption. Deliver instant OTT activations and lifestyle passes straight to consumer phone numbers with zero code-entry friction.",
+      bg: "bg-purple-950/20 border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-950/30",
+      iconBg: "bg-purple-500/10 text-purple-400 border-purple-500/20"
+    },
+    {
+      title: "Giveaways & Campaigns",
+      icon: Gift,
+      description:
+        "Supercharge customer acquisition and referral campaigns with high-perceived-value digital subscriptions, issued dynamically with guaranteed single-use FIFO coupon security.",
+      bg: "bg-emerald-950/20 border-emerald-500/20 hover:border-emerald-500/40 hover:bg-emerald-950/30",
+      iconBg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+    },
+    {
+      title: "Corporate & Benefits",
+      icon: Sparkles,
+      description:
+        "Automate monthly employee streaming, wellness allowances, and enterprise AI tooling passes through pre-funded corporate float rails and automated T+1 tax compliance.",
+      bg: "bg-amber-950/20 border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-950/30",
+      iconBg: "bg-amber-500/10 text-amber-400 border-amber-500/20"
+    }
+  ];
+
   const brands = [
-    { name: "JioHotstar", category: "OTT", plan: "Super & Premium 12M", badge: "Instant MSISDN / Voucher", bg: "from-blue-600/20 to-indigo-600/10", border: "border-blue-500/30", color: "text-blue-400" },
-    { name: "Amazon Prime", category: "OTT", plan: "Annual Membership", badge: "Voucher Delivery", bg: "from-amber-600/20 to-orange-600/10", border: "border-amber-500/30", color: "text-amber-400" },
-    { name: "SonyLIV", category: "OTT", plan: "12M Premium All Access", badge: "Direct OTT Provision", bg: "from-sky-600/20 to-blue-600/10", border: "border-sky-500/30", color: "text-sky-400" },
-    { name: "ZEE5", category: "OTT", plan: "All Access Annual", badge: "Instant Activation", bg: "from-purple-600/20 to-pink-600/10", border: "border-purple-500/30", color: "text-purple-400" },
-    { name: "Swiggy One", category: "LIFESTYLE", plan: "3M & 12M Membership", badge: "Encrypted Coupon", bg: "from-orange-600/20 to-red-600/10", border: "border-orange-500/30", color: "text-orange-400" },
-    { name: "Aha Video", category: "OTT", plan: "Gold & Annual Telugu/Tamil", badge: "Direct Provision", bg: "from-red-600/20 to-orange-600/10", border: "border-red-500/30", color: "text-red-400" },
-    { name: "Klikk", category: "OTT", plan: "Regional 12M Subscription", badge: "Instant Voucher", bg: "from-emerald-600/20 to-teal-600/10", border: "border-emerald-500/30", color: "text-emerald-400" },
-    { name: "Xbox Game Pass", category: "GAMING", plan: "Ultimate & Core (PC/Console)", badge: "Digital Code Vault", bg: "from-green-600/20 to-emerald-600/10", border: "border-green-500/30", color: "text-green-400" },
-    { name: "PlayStation (PSN)", category: "GAMING", plan: "Wallet Top-up & Plus", badge: "Instant Pin Issue", bg: "from-blue-700/20 to-indigo-700/10", border: "border-blue-500/30", color: "text-blue-300" },
-    { name: "AI Subscriptions", category: "AI", plan: "ChatGPT Plus / Perplexity / Gemini", badge: "Corporate API Keys", bg: "from-teal-600/20 to-cyan-600/10", border: "border-teal-500/30", color: "text-teal-300" },
+    {
+      name: "JioHotstar",
+      category: "OTT",
+      plan: "Super & Premium 12M Tiers",
+      badge: "Instant MSISDN / Voucher",
+      content: "Cricket, HBO, Disney+ & regional blockbusters with 4K multi-screen support.",
+      bg: "bg-blue-950/25 border-blue-500/25 hover:border-blue-400/50 hover:bg-blue-900/30",
+      color: "text-blue-300",
+      badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20"
+    },
+    {
+      name: "Amazon Prime",
+      category: "OTT",
+      plan: "Annual Full Access Membership",
+      badge: "Voucher Delivery",
+      content: "Prime Video 4K HDR streaming, free expedited shipping & Prime Music bundled.",
+      bg: "bg-amber-950/25 border-amber-500/25 hover:border-amber-400/50 hover:bg-amber-900/30",
+      color: "text-amber-300",
+      badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20"
+    },
+    {
+      name: "SonyLIV",
+      category: "OTT",
+      plan: "12M Premium All Access",
+      badge: "Direct OTT Provision",
+      content: "UEFA Champions League, WWE Network, international movies & Sony originals.",
+      bg: "bg-sky-950/25 border-sky-500/25 hover:border-sky-400/50 hover:bg-sky-900/30",
+      color: "text-sky-300",
+      badgeColor: "bg-sky-500/10 text-sky-300 border-sky-500/20"
+    },
+    {
+      name: "ZEE5",
+      category: "OTT",
+      plan: "All Access Annual",
+      badge: "Instant Activation",
+      content: "500+ regional original series, live TV news, and expansive Indian cinema library.",
+      bg: "bg-purple-950/25 border-purple-500/25 hover:border-purple-400/50 hover:bg-purple-900/30",
+      color: "text-purple-300",
+      badgeColor: "bg-purple-500/10 text-purple-300 border-purple-500/20"
+    },
+    {
+      name: "Swiggy One",
+      category: "LIFESTYLE",
+      plan: "3M & 12M Membership",
+      badge: "Encrypted Coupon",
+      content: "Unlimited free food deliveries, Instamart grocery perks & Dineout dining discounts.",
+      bg: "bg-orange-950/25 border-orange-500/25 hover:border-orange-400/50 hover:bg-orange-900/30",
+      color: "text-orange-300",
+      badgeColor: "bg-orange-500/10 text-orange-300 border-orange-500/20"
+    },
+    {
+      name: "Aha Video",
+      category: "OTT",
+      plan: "Gold & Annual Telugu/Tamil",
+      badge: "Direct Provision",
+      content: "100% native regional Telugu & Tamil movies, exclusive chat shows, and theater hits.",
+      bg: "bg-rose-950/25 border-rose-500/25 hover:border-rose-400/50 hover:bg-rose-900/30",
+      color: "text-rose-300",
+      badgeColor: "bg-rose-500/10 text-rose-300 border-rose-500/20"
+    },
+    {
+      name: "Klikk",
+      category: "OTT",
+      plan: "Regional 12M Subscription",
+      badge: "Instant Voucher",
+      content: "Leading Bengali entertainment streaming hub with original web series and classics.",
+      bg: "bg-emerald-950/25 border-emerald-500/25 hover:border-emerald-400/50 hover:bg-emerald-900/30",
+      color: "text-emerald-300",
+      badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
+    },
+    {
+      name: "Xbox Game Pass",
+      category: "GAMING",
+      plan: "Ultimate & Core (PC/Console)",
+      badge: "Digital Code Vault",
+      content: "Day-one access to iconic franchises, EA Play catalog, and cloud gaming library.",
+      bg: "bg-green-950/25 border-green-500/25 hover:border-green-400/50 hover:bg-green-900/30",
+      color: "text-green-300",
+      badgeColor: "bg-green-500/10 text-green-300 border-green-500/20"
+    },
+    {
+      name: "PlayStation (PSN)",
+      category: "GAMING",
+      plan: "Wallet Top-up & Plus",
+      badge: "Instant PIN Issue",
+      content: "Online multiplayer access, monthly games catalog, and official PS Store credit.",
+      bg: "bg-indigo-950/25 border-indigo-500/25 hover:border-indigo-400/50 hover:bg-indigo-900/30",
+      color: "text-indigo-300",
+      badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20"
+    },
+    {
+      name: "AI Subscriptions",
+      category: "AI",
+      plan: "ChatGPT Plus / Perplexity / Gemini",
+      badge: "Corporate API Keys",
+      content: "Frontier multimodal reasoning, developer workspaces, and research assistance tools.",
+      bg: "bg-teal-950/25 border-teal-500/25 hover:border-teal-400/50 hover:bg-teal-900/30",
+      color: "text-teal-300",
+      badgeColor: "bg-teal-500/10 text-teal-300 border-teal-500/20"
+    }
   ];
 
   const filteredBrands = selectedCategory === "ALL" 
@@ -49,7 +178,7 @@ export default function SubzoLandingPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-600 selection:text-white">
-      {/* Main Header */}
+      {/* Top Header */}
       <header className="border-b border-slate-800/60 sticky top-0 z-40 bg-slate-950/80 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -123,103 +252,95 @@ export default function SubzoLandingPage() {
         </div>
       </section>
 
-      {/* Target Use Cases */}
-      <section id="usecases" className="py-16 border-b border-slate-800/50 max-w-7xl mx-auto px-6">
+      {/* Target Use Cases (With Light-Tinted Themed Backgrounds) */}
+      <section id="usecases" className="py-20 border-b border-slate-800/50 max-w-7xl mx-auto px-6">
         <div className="text-center space-y-2 mb-12">
           <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Built For Every Customer Touchpoint</span>
           <h2 className="text-2xl md:text-3xl font-bold text-white">Powering Growth Across Multiple Industries</h2>
+          <p className="text-xs text-slate-400 max-w-2xl mx-auto">
+            From co-branded card rewards to employee wellbeing programs and gamified acquisition flows.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-              <CreditCard className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-white text-base">Fintech & Cards</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Bundle OTT and food subscriptions as card activation milestone perks and welcome vouchers.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
-              <Award className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-white text-base">Loyalty & Rewards</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Let users burn reward points for genuine subscriptions with zero friction and instant activation.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-              <Gift className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-white text-base">Giveaways & Campaigns</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Run marketing sweepstakes, referral rewards, and user acquisition campaigns with brand perks.
-            </p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <h3 className="font-bold text-white text-base">Corporate & Benefits</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Automate monthly employee wellness, streaming, and AI tool allowances through wholesale bulk rails.
-            </p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {platforms.map((p, idx) => {
+            const Icon = p.icon;
+            return (
+              <div
+                key={idx}
+                className={`p-6 rounded-2xl border transition-all duration-200 backdrop-blur-sm flex flex-col justify-between ${p.bg}`}
+              >
+                <div>
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 border ${p.iconBg}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-white text-base mb-2">{p.title}</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">{p.description}</p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
-      {/* Brand Catalog Grid */}
+      {/* Brand Catalog Grid (With Tailored Light Color Themes & Rich Brand Details) */}
       <section id="brands" className="py-20 border-b border-slate-800/50 max-w-7xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
           <div>
             <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Brand Network</span>
             <h2 className="text-3xl font-bold text-white mt-1">Available Subscriptions & Perks</h2>
-            <p className="text-xs text-slate-400 mt-1">Direct wholesale allocations for Indian consumer enterprises.</p>
+            <p className="text-xs text-slate-400 mt-1">Top-tier wholesale allocations directly integrated for Indian enterprise platforms.</p>
           </div>
 
+          {/* Meaningful Ecosystem Filter */}
           <div className="flex items-center space-x-2 overflow-x-auto pb-1">
-            {(["ALL", "OTT", "LIFESTYLE", "GAMING", "AI"] as const).map((cat) => (
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 hidden sm:inline">
+              Top Tier & Niche Ecosystems:
+            </span>
+            {[
+              { id: "ALL", label: "All Premium Catalog" },
+              { id: "OTT", label: "Streaming & OTT" },
+              { id: "LIFESTYLE", label: "Everyday Lifestyle" },
+              { id: "GAMING", label: "Gaming Ecosystems" },
+              { id: "AI", label: "Frontier AI Suites" }
+            ].map((cat) => (
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`text-xs px-3.5 py-1.5 rounded-xl font-medium transition ${
-                  selectedCategory === cat
-                    ? "bg-blue-600 text-white font-semibold shadow"
-                    : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id as any)}
+                className={`text-xs px-3.5 py-1.5 rounded-xl font-medium transition whitespace-nowrap ${
+                  selectedCategory === cat.id
+                    ? "bg-blue-600 text-white font-semibold shadow-md shadow-blue-600/30"
+                    : "bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
                 }`}
               >
-                {cat}
+                {cat.label}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
           {filteredBrands.map((brand, idx) => (
             <div
               key={idx}
-              className={`p-5 rounded-2xl bg-gradient-to-br ${brand.bg} border ${brand.border} backdrop-blur-sm flex flex-col justify-between hover:scale-[1.02] transition-transform shadow-lg`}
+              className={`p-5 rounded-2xl border backdrop-blur-md flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 shadow-lg ${brand.bg}`}
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className={`text-base font-extrabold tracking-tight ${brand.color}`}>
                     {brand.name}
                   </span>
-                  <span className="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-950/60 border border-slate-800 text-slate-300">
+                  <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${brand.badgeColor}`}>
                     {brand.category}
                   </span>
                 </div>
                 <p className="text-xs font-semibold text-slate-200">{brand.plan}</p>
+                <p className="text-[11px] text-slate-300/80 mt-2 leading-relaxed">{brand.content}</p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400">
+              <div className="mt-5 pt-3 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-300">
                 <span>{brand.badge}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400"></span>
               </div>
             </div>
           ))}
@@ -278,19 +399,16 @@ export default function SubzoLandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Clean Footer (Redundant Links Removed) */}
       <footer className="py-12 max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-500">
         <div className="flex items-center space-x-3">
           <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white text-xs">S</div>
           <span className="text-slate-300 font-semibold">Subzo Technologies India</span>
           <span>© 2026. All rights reserved.</span>
         </div>
-        <div className="flex items-center space-x-6">
-          <Link href="/login" className="hover:text-slate-300 transition">Partner Console</Link>
-          <Link href="/admin-login" className="hover:text-slate-300 transition">Subzo Team Sign In</Link>
-          <Link href="/docs" className="hover:text-slate-300 transition">API Docs</Link>
-          <span className="font-mono text-emerald-400">● Systems 100% Operational</span>
-        </div>
+        <p className="text-[11px] text-slate-500">
+          Enterprise subscription distribution rails and digital voucher clearinghouse.
+        </p>
       </footer>
     </div>
   );
