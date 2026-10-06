@@ -148,7 +148,7 @@ export default function SubzoPlatform() {
   const [currentRole, setCurrentRole] = useState<"admin" | "PRT-101" | "PRT-102">("admin");
   const [activeTab, setActiveTab] = useState<
     "approvals" | "catalog" | "vault" | "developer" | "simulator" | "customers" | "predictions" | "settlement"
-  >("approvals");
+  >("catalog");
 
   const [partners, setPartners] = useState<PartnerAccount[]>([
     {
@@ -222,6 +222,23 @@ export default function SubzoPlatform() {
     }
   ];
 
+  // Sync role from login credentials on load
+  useEffect(() => {
+    const savedRole = localStorage.getItem("subzo_user_role");
+    const savedPartnerId = localStorage.getItem("subzo_partner_id");
+
+    if (savedRole === "admin") {
+      setCurrentRole("admin");
+      setActiveTab("approvals");
+    } else if (savedPartnerId === "PRT-102") {
+      setCurrentRole("PRT-102");
+      setActiveTab("catalog");
+    } else {
+      setCurrentRole("PRT-101");
+      setActiveTab("catalog");
+    }
+  }, []);
+
   const loadData = async () => {
     try {
       // 1. Catalog
@@ -248,7 +265,7 @@ export default function SubzoPlatform() {
         if (!selectedSkuId && formatted.length > 0) setSelectedSkuId(formatted[0].id);
       }
 
-      // 2. Vouchers
+      // 2. Vouchers (Admin only pool)
       const { data: vData } = await supabase.from("voucher_inventory").select("*").order("created_at", { ascending: false });
       if (vData) {
         setVouchers(
@@ -352,9 +369,16 @@ export default function SubzoPlatform() {
 
   const filteredOrders = orders.filter((o) => (currentRole === "admin" ? true : o.partnerId === currentRole));
   const filteredKeys = apiKeys.filter((k) => (currentRole === "admin" ? true : k.partnerId === currentRole));
-  const handleLogout = () => { document.cookie = "subzo_session=; path=/; max-age=0;"; window.location.href = "/login"; };
   const activePartnerData = partners.find((p) => p.id === currentRole);
   const currentSelectedSku = catalog.find((c) => c.id === selectedSkuId) || catalog[0];
+
+  const handleLogout = () => {
+    document.cookie = "subzo_session=; path=/; max-age=0;";
+    document.cookie = "subzo_role=; path=/; max-age=0;";
+    document.cookie = "subzo_partner_id=; path=/; max-age=0;";
+    localStorage.clear();
+    window.location.href = "/login";
+  };
 
   // Customer Profiles
   const customerMap = new Map<string, CustomerProfile>();
@@ -413,7 +437,7 @@ export default function SubzoPlatform() {
     }
   };
 
-  // Bulk Ingest Vouchers
+  // Bulk Ingest Vouchers (Admin only)
   const handleBulkIngest = async (e: React.FormEvent) => {
     e.preventDefault();
     const splitCodes = ingestCodesRaw
@@ -507,7 +531,7 @@ export default function SubzoPlatform() {
           amount: topupAmount,
           utr: topupUtr,
           bank_ref: activePartnerData?.van || "ICICI-VAN-9920",
-          requested_by: currentRole === "admin" ? "admin.maker@subzo.io" : activePartnerData?.contactEmail || "ops@partner.in",
+          requested_by: currentRole === "admin" ? "satish@subzo.in" : activePartnerData?.contactEmail || "ops@partner.in",
           requested_at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           status: "PENDING_APPROVAL"
         }
@@ -545,15 +569,9 @@ export default function SubzoPlatform() {
     }
   };
 
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(id);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans">
-      {/* STRUCTURED VERTICAL LEFT SIDEBAR */}
+      {/* SIDEBAR NAVIGATION */}
       <aside className="w-64 border-r border-slate-800 bg-slate-900/60 backdrop-blur flex flex-col justify-between shrink-0 sticky top-0 h-screen">
         <div>
           <div className="p-5 border-b border-slate-800 flex items-center space-x-3">
@@ -564,19 +582,19 @@ export default function SubzoPlatform() {
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-base tracking-tight text-white">Subzo</span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  PostgreSQL
+                  {currentRole === "admin" ? "Admin" : "Partner"}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">B2B Digital Subscription Rails</p>
+              <p className="text-[11px] text-slate-400">Subscription Platform</p>
             </div>
           </div>
 
           <div className="p-3 space-y-1">
             <p className="px-3 pt-2 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              Operations Workflow
+              {currentRole === "admin" ? "Master Operations" : "Partner Workspace"}
             </p>
 
-            {/* 1. Treasury */}
+            {/* 1. Treasury Float Desk */}
             <button
               onClick={() => setActiveTab("approvals")}
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
@@ -587,16 +605,16 @@ export default function SubzoPlatform() {
             >
               <div className="flex items-center space-x-3">
                 <ShieldCheck className="w-4 h-4 shrink-0 text-blue-400" />
-                <span>1. Treasury Float Desk</span>
+                <span>1. Float & Balance</span>
               </div>
-              {requests.filter((r) => r.status === "PENDING_APPROVAL").length > 0 && (
+              {currentRole === "admin" && requests.filter((r) => r.status === "PENDING_APPROVAL").length > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-[10px] font-bold text-slate-950">
                   {requests.filter((r) => r.status === "PENDING_APPROVAL").length}
                 </span>
               )}
             </button>
 
-            {/* 2. Catalog */}
+            {/* 2. Wholesale Catalog */}
             <button
               onClick={() => setActiveTab("catalog")}
               className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
@@ -609,23 +627,25 @@ export default function SubzoPlatform() {
               <span>2. Wholesale Catalog</span>
             </button>
 
-            {/* 3. Voucher Vault */}
-            <button
-              onClick={() => setActiveTab("vault")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
-                activeTab === "vault"
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <Archive className="w-4 h-4 shrink-0 text-amber-400" />
-                <span>3. Voucher Code Vault</span>
-              </div>
-              <span className="px-1.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-mono text-amber-400 border border-slate-700">
-                {vouchers.filter((v) => v.status === "AVAILABLE").length}
-              </span>
-            </button>
+            {/* 3. Voucher Code Vault (ADMIN ONLY - NEVER SHOWN TO PARTNERS) */}
+            {currentRole === "admin" && (
+              <button
+                onClick={() => setActiveTab("vault")}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
+                  activeTab === "vault"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <Archive className="w-4 h-4 shrink-0 text-amber-400" />
+                  <span>3. Voucher Code Vault</span>
+                </div>
+                <span className="px-1.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-mono text-amber-400 border border-slate-700">
+                  {vouchers.filter((v) => v.status === "AVAILABLE").length}
+                </span>
+              </button>
+            )}
 
             {/* 4. Developer API */}
             <button
@@ -637,10 +657,10 @@ export default function SubzoPlatform() {
               }`}
             >
               <Code2 className="w-4 h-4 shrink-0 text-cyan-400" />
-              <span>4. Developer API & Keys</span>
+              <span>{currentRole === "admin" ? "4. API Keys & Gateways" : "3. API Credentials"}</span>
             </button>
 
-            {/* 5. Sandbox */}
+            {/* 5. Simulator */}
             <button
               onClick={() => setActiveTab("simulator")}
               className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
@@ -650,10 +670,10 @@ export default function SubzoPlatform() {
               }`}
             >
               <CreditCard className="w-4 h-4 shrink-0 text-emerald-400" />
-              <span>5. Provisioning Sandbox</span>
+              <span>{currentRole === "admin" ? "5. Provisioning Sandbox" : "4. Test Provisioning"}</span>
             </button>
 
-            {/* 6. Customer 360 */}
+            {/* 6. Customer 360 / Orders */}
             <button
               onClick={() => setActiveTab("customers")}
               className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
@@ -663,52 +683,64 @@ export default function SubzoPlatform() {
               }`}
             >
               <Users className="w-4 h-4 shrink-0 text-teal-400" />
-              <span>6. Customer 360° & Orders</span>
+              <span>{currentRole === "admin" ? "6. Customer 360° & Orders" : "5. Customer Orders"}</span>
             </button>
 
-            {/* 7. Velocity */}
-            <button
-              onClick={() => setActiveTab("predictions")}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
-                activeTab === "predictions"
-                  ? "bg-purple-600 text-white shadow-lg shadow-purple-600/20 font-semibold"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-              }`}
-            >
-              <Sparkles className="w-4 h-4 shrink-0 text-purple-400" />
-              <span>7. Sales Velocity & Insights</span>
-            </button>
+            {/* 7. Velocity (Admin Only) */}
+            {currentRole === "admin" && (
+              <button
+                onClick={() => setActiveTab("predictions")}
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
+                  activeTab === "predictions"
+                    ? "bg-purple-600 text-white shadow-lg shadow-purple-600/20 font-semibold"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                }`}
+              >
+                <Sparkles className="w-4 h-4 shrink-0 text-purple-400" />
+                <span>7. Sales Velocity</span>
+              </button>
+            )}
 
-            {/* 8. Settlement */}
-            <button
-              onClick={() => setActiveTab("settlement")}
-              className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
-                activeTab === "settlement"
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-              }`}
-            >
-              <FileSpreadsheet className="w-4 h-4 shrink-0 text-rose-400" />
-              <span>8. T+1 Recon & GST</span>
-            </button>
+            {/* 8. Settlement (Admin Only) */}
+            {currentRole === "admin" && (
+              <button
+                onClick={() => setActiveTab("settlement")}
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition ${
+                  activeTab === "settlement"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                }`}
+              >
+                <FileSpreadsheet className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>8. T+1 Recon & GST</span>
+              </button>
+            )}
           </div>
         </div>
 
         <div className="p-4 border-t border-slate-800 space-y-3">
           <div>
             <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1.5">
-              Portal Perspective
+              Portal Mode
             </label>
             <div className="flex items-center space-x-2 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 w-full">
               <UserCog className="w-3.5 h-3.5 text-blue-400 shrink-0" />
               <select
                 value={currentRole}
-                onChange={(e) => setCurrentRole(e.target.value as any)}
+                onChange={(e) => {
+                  const val = e.target.value as any;
+                  setCurrentRole(val);
+                  localStorage.setItem("subzo_user_role", val === "admin" ? "admin" : "partner");
+                  localStorage.setItem("subzo_partner_id", val === "admin" ? "PRT-101" : val);
+                  if (val !== "admin" && (activeTab === "vault" || activeTab === "predictions" || activeTab === "settlement")) {
+                    setActiveTab("catalog");
+                  }
+                }}
                 className="bg-transparent text-xs text-slate-200 font-medium focus:outline-none cursor-pointer w-full"
               >
-                <option value="admin" className="bg-slate-900 text-white">Subzo Admin (Platform)</option>
-                <option value="PRT-101" className="bg-slate-900 text-blue-300">View as OneCard</option>
-                <option value="PRT-102" className="bg-slate-900 text-purple-300">View as FamApp</option>
+                <option value="admin" className="bg-slate-900 text-white">Subzo Admin (Master)</option>
+                <option value="PRT-101" className="bg-slate-900 text-blue-300">Partner: OneCard</option>
+                <option value="PRT-102" className="bg-slate-900 text-purple-300">Partner: FamApp</option>
               </select>
             </div>
           </div>
@@ -718,7 +750,7 @@ export default function SubzoPlatform() {
               {currentRole === "admin" ? "Satish Chavan" : activePartnerData?.name}
             </p>
             <p className="text-[10px] text-emerald-400 font-mono">
-              {currentRole === "admin" ? "Checker Role (Authorized)" : "Partner Portal Access"}
+              {currentRole === "admin" ? "Master Administrative Access" : "Authorized Partner"}
             </p>
             <button onClick={handleLogout} className="mt-2 text-[10px] text-red-400 hover:text-red-300 font-semibold block transition">Sign Out of Session</button>
           </div>
@@ -752,38 +784,50 @@ export default function SubzoPlatform() {
               <p className="text-2xl font-bold font-mono text-white">
                 {catalog.filter((c) => c.enabled).length} / {catalog.length}
               </p>
-              <p className="text-xs text-slate-400 mt-2">Ready for Provisioning</p>
+              <p className="text-xs text-slate-400 mt-2">Available for Instant Issue</p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
-              <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-                <span>LIVE VAULT STOCK</span>
-                <Archive className="w-4 h-4 text-amber-400" />
+            {/* Live Vault Stock is strictly shown only to Admin */}
+            {currentRole === "admin" ? (
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
+                <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                  <span>MASTER VAULT CODES</span>
+                  <Archive className="w-4 h-4 text-amber-400" />
+                </div>
+                <p className="text-2xl font-bold font-mono text-amber-400">
+                  {vouchers.filter((v) => v.status === "AVAILABLE").length} Codes
+                </p>
+                <p className="text-xs text-slate-400 mt-2">{vouchers.filter((v) => v.status === "CLAIMED").length} Claimed</p>
               </div>
-              <p className="text-2xl font-bold font-mono text-amber-400">
-                {vouchers.filter((v) => v.status === "AVAILABLE").length} Codes
-              </p>
-              <p className="text-xs text-slate-400 mt-2">{vouchers.filter((v) => v.status === "CLAIMED").length} Claimed</p>
-            </div>
+            ) : (
+              <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
+                <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                  <span>FULFILLMENT SLA</span>
+                  <Zap className="w-4 h-4 text-emerald-400" />
+                </div>
+                <p className="text-2xl font-bold font-mono text-emerald-400">99.98%</p>
+                <p className="text-xs text-slate-400 mt-2">&lt; 350ms Latency</p>
+              </div>
+            )}
 
             <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
               <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
-                <span>TOTAL COMPLETED ORDERS</span>
+                <span>COMPLETED PERK ORDERS</span>
                 <Sparkles className="w-4 h-4 text-purple-400" />
               </div>
               <p className="text-2xl font-bold font-mono text-purple-400">{filteredOrders.length}</p>
-              <p className="text-xs text-emerald-400 mt-2">+48% WoW Velocity</p>
+              <p className="text-xs text-emerald-400 mt-2">Active Cardholder Grants</p>
             </div>
           </div>
 
-          {/* TAB 1: TREASURY FLOAT DESK */}
+          {/* TAB 1: FLOAT & BALANCE DESK */}
           {activeTab === "approvals" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center space-x-2">
                     <ShieldCheck className="w-5 h-5 text-blue-400" />
-                    <span>1. Treasury Float Desk (Maker-Checker Workflow)</span>
+                    <span>Float Balance & Pre-funding Desk</span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
                     Pre-funding approvals, bank UTR validation, and partner virtual account (VAN) credit lines.
@@ -795,7 +839,7 @@ export default function SubzoPlatform() {
               <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4 text-xs">
                 <div className="flex items-center space-x-2 font-bold text-blue-400 uppercase tracking-wider">
                   <PlusCircle className="w-4 h-4" />
-                  <span>Maker: Initiate New Float Deposit</span>
+                  <span>Initiate New Float Deposit</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -833,56 +877,60 @@ export default function SubzoPlatform() {
                     className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl flex items-center space-x-2"
                   >
                     {isSubmittingTopup ? <RefreshCw className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
-                    <span>Submit to Checker Desk</span>
+                    <span>Submit Float Request</span>
                   </button>
                 </div>
               </div>
 
-              {/* Checker Table */}
+              {/* Float Requests Table */}
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-slate-900 text-slate-400 font-sans border-b border-slate-800">
                     <tr>
                       <th className="py-3 px-4">REQUEST ID</th>
-                      <th className="py-3 px-4">PARTNER & VAN</th>
+                      <th className="py-3 px-4">PARTNER</th>
                       <th className="py-3 px-4">AMOUNT</th>
                       <th className="py-3 px-4">UTR REFERENCE</th>
                       <th className="py-3 px-4">STATUS</th>
-                      <th className="py-3 px-4 text-right">CHECKER SIGN-OFF</th>
+                      {currentRole === "admin" && <th className="py-3 px-4 text-right">SIGN-OFF</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
-                    {requests.map((req) => (
-                      <tr key={req.id} className="hover:bg-slate-800/30">
-                        <td className="py-4 px-4 font-bold text-blue-400">{req.id}</td>
-                        <td className="py-4 px-4 font-sans text-slate-200">{req.partner}</td>
-                        <td className="py-4 px-4 font-bold text-white">₹{req.amount.toLocaleString("en-IN")}</td>
-                        <td className="py-4 px-4 text-slate-300">{req.utr}</td>
-                        <td className="py-4 px-4 font-sans">
-                          {req.status === "APPROVED" ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              Approved
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                              Pending
-                            </span>
+                    {requests
+                      .filter((req) => (currentRole === "admin" ? true : req.partner === activePartnerData?.name))
+                      .map((req) => (
+                        <tr key={req.id} className="hover:bg-slate-800/30">
+                          <td className="py-4 px-4 font-bold text-blue-400">{req.id}</td>
+                          <td className="py-4 px-4 font-sans text-slate-200">{req.partner}</td>
+                          <td className="py-4 px-4 font-bold text-white">₹{req.amount.toLocaleString("en-IN")}</td>
+                          <td className="py-4 px-4 text-slate-300">{req.utr}</td>
+                          <td className="py-4 px-4 font-sans">
+                            {req.status === "APPROVED" ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Credited
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                Pending Verification
+                              </span>
+                            )}
+                          </td>
+                          {currentRole === "admin" && (
+                            <td className="py-4 px-4 text-right font-sans">
+                              {req.status === "PENDING_APPROVAL" ? (
+                                <button
+                                  onClick={() => approveTopup(req)}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold"
+                                >
+                                  Verify & Credit
+                                </button>
+                              ) : (
+                                <span className="text-slate-500 text-[11px]">{req.approvedBy || "Immutable"}</span>
+                              )}
+                            </td>
                           )}
-                        </td>
-                        <td className="py-4 px-4 text-right font-sans">
-                          {req.status === "PENDING_APPROVAL" && currentRole === "admin" ? (
-                            <button
-                              onClick={() => approveTopup(req)}
-                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold"
-                            >
-                              Approve & Credit
-                            </button>
-                          ) : (
-                            <span className="text-slate-500 text-[11px]">{req.approvedBy || "Immutable"}</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -896,10 +944,10 @@ export default function SubzoPlatform() {
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center space-x-2">
                     <Layers className="w-5 h-5 text-indigo-400" />
-                    <span>2. Wholesale Subscription Catalog</span>
+                    <span>Wholesale Subscription Catalog</span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
-                    Manage direct OEM buy rates, wholesale prices to partners, and plan redemption specifications.
+                    Direct buy rates, wholesale prices to partners, and plan redemption specifications.
                   </p>
                 </div>
               </div>
@@ -913,7 +961,7 @@ export default function SubzoPlatform() {
                       <th className="py-3 px-4">FULFILLMENT</th>
                       <th className="py-3 px-4">RETAIL MRP</th>
                       {currentRole === "admin" && <th className="py-3 px-4">SUBZO BUY RATE</th>}
-                      <th className="py-3 px-4">WHOLESALE</th>
+                      <th className="py-3 px-4">PARTNER WHOLESALE</th>
                       {currentRole === "admin" && <th className="py-3 px-4">MARGIN</th>}
                       <th className="py-3 px-4 text-center">STATUS</th>
                     </tr>
@@ -947,11 +995,11 @@ export default function SubzoPlatform() {
                         <td className="py-4 px-4 text-center">
                           {sku.enabled ? (
                             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-sans">
-                              Active
+                              Available
                             </span>
                           ) : (
                             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700 font-sans">
-                              Disabled
+                              Paused
                             </span>
                           )}
                         </td>
@@ -963,94 +1011,92 @@ export default function SubzoPlatform() {
             </div>
           )}
 
-          {/* TAB 3: VOUCHER VAULT */}
-          {activeTab === "vault" && (
+          {/* TAB 3: VOUCHER VAULT (STRICTLY ADMIN ONLY) */}
+          {activeTab === "vault" && currentRole === "admin" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold text-white flex items-center space-x-2">
                     <Archive className="w-5 h-5 text-amber-400" />
-                    <span>3. Pre-Loaded Voucher Inventory Vault</span>
+                    <span>Master Pre-Loaded Voucher Vault (Restricted Admin Desk)</span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
-                    Manage supplier coupon batches with upload & expiry dates. API orders automatically claim from this pool.
+                    Manage supplier coupon batches with upload & expiry dates. Codes are strictly isolated and never shown to partners until purchased.
                   </p>
                 </div>
               </div>
 
               {/* Bulk Loader Form */}
-              {currentRole === "admin" && (
-                <form onSubmit={handleBulkIngest} className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4 text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <h3 className="font-bold text-white text-sm flex items-center space-x-2">
-                      <UploadCloud className="w-4 h-4 text-amber-400" />
-                      <span>Bulk Ingest Supplier Voucher Codes</span>
-                    </h3>
-                  </div>
+              <form onSubmit={handleBulkIngest} className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4 text-xs">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <h3 className="font-bold text-white text-sm flex items-center space-x-2">
+                    <UploadCloud className="w-4 h-4 text-amber-400" />
+                    <span>Bulk Ingest Supplier Voucher Codes</span>
+                  </h3>
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-slate-400 font-semibold block mb-1">Target SKU</label>
-                      <select
-                        value={ingestSku}
-                        onChange={(e) => setIngestSku(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
-                      >
-                        {catalog
-                          .filter((c) => c.fulfillmentType === "COUPON_CODE")
-                          .map((sku) => (
-                            <option key={sku.id} value={sku.id}>{sku.name} ({sku.id})</option>
-                          ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-slate-400 font-semibold block mb-1">Batch / PO Identifier</label>
-                      <input
-                        type="text"
-                        value={ingestBatchRef}
-                        onChange={(e) => setIngestBatchRef(e.target.value)}
-                        required
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-slate-400 font-semibold block mb-1">Voucher Expiry Date</label>
-                      <input
-                        type="date"
-                        value={ingestExpiryDate}
-                        onChange={(e) => setIngestExpiryDate(e.target.value)}
-                        required
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
-                      />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-slate-400 font-semibold block mb-1">Target SKU</label>
+                    <select
+                      value={ingestSku}
+                      onChange={(e) => setIngestSku(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
+                    >
+                      {catalog
+                        .filter((c) => c.fulfillmentType === "COUPON_CODE")
+                        .map((sku) => (
+                          <option key={sku.id} value={sku.id}>{sku.name} ({sku.id})</option>
+                        ))}
+                    </select>
                   </div>
 
                   <div>
-                    <label className="text-slate-400 font-semibold block mb-1">Voucher Codes (1 per line)</label>
-                    <textarea
-                      rows={4}
-                      value={ingestCodesRaw}
-                      onChange={(e) => setIngestCodesRaw(e.target.value)}
-                      placeholder={`HS-SUP-NOV-001\nHS-SUP-NOV-002\nHS-SUP-NOV-003`}
+                    <label className="text-slate-400 font-semibold block mb-1">Batch / PO Identifier</label>
+                    <input
+                      type="text"
+                      value={ingestBatchRef}
+                      onChange={(e) => setIngestBatchRef(e.target.value)}
                       required
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
                     />
                   </div>
 
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={isIngesting}
-                      className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl flex items-center space-x-2"
-                    >
-                      {isIngesting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
-                      <span>Save Batch to Vault</span>
-                    </button>
+                  <div>
+                    <label className="text-slate-400 font-semibold block mb-1">Voucher Expiry Date</label>
+                    <input
+                      type="date"
+                      value={ingestExpiryDate}
+                      onChange={(e) => setIngestExpiryDate(e.target.value)}
+                      required
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
+                    />
                   </div>
-                </form>
-              )}
+                </div>
+
+                <div>
+                  <label className="text-slate-400 font-semibold block mb-1">Voucher Codes (1 per line)</label>
+                  <textarea
+                    rows={4}
+                    value={ingestCodesRaw}
+                    onChange={(e) => setIngestCodesRaw(e.target.value)}
+                    placeholder={`HS-SUP-NOV-001\nHS-SUP-NOV-002\nHS-SUP-NOV-003`}
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 font-mono"
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isIngesting}
+                    className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl flex items-center space-x-2"
+                  >
+                    {isIngesting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
+                    <span>Save Batch to Vault</span>
+                  </button>
+                </div>
+              </form>
 
               {/* Codes Table */}
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
@@ -1101,7 +1147,7 @@ export default function SubzoPlatform() {
             <div className="space-y-6">
               <h2 className="text-lg font-bold text-white flex items-center space-x-2">
                 <Code2 className="w-5 h-5 text-cyan-400" />
-                <span>4. Developer Documentation & API Gateway</span>
+                <span>API Keys & Authentication Tokens</span>
               </h2>
 
               <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-5">
@@ -1170,7 +1216,7 @@ export default function SubzoPlatform() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4 text-xs font-sans">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-white text-sm">5. Provisioning Sandbox (Live DB Verification)</h3>
+                  <h3 className="font-bold text-white text-sm">Interactive Provisioning Tester</h3>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     currentSelectedSku?.fulfillmentType === "DIRECT_API"
                       ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
@@ -1231,12 +1277,12 @@ export default function SubzoPlatform() {
                   disabled={isProvisioning}
                   className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition"
                 >
-                  {isProvisioning ? "Executing Rails Protocol..." : "Execute Real DB Activation"}
+                  {isProvisioning ? "Executing Provisioning..." : "Execute Test Order"}
                 </button>
               </div>
 
               <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs space-y-2">
-                <span className="text-slate-500 text-[11px] block border-b border-slate-800 pb-2">REAL-TIME DB AUDIT STREAM</span>
+                <span className="text-slate-500 text-[11px] block border-b border-slate-800 pb-2">PROVISIONING RESPONSE LOG</span>
                 {simLogs.map((log, i) => (
                   <p key={i} className={log.includes("ASSIGNED") || log.includes("PERSISTED") ? "text-emerald-400 font-bold" : log.includes("FAIL") ? "text-red-400 font-bold" : "text-slate-300"}>
                     {log}
@@ -1244,19 +1290,19 @@ export default function SubzoPlatform() {
                 ))}
                 {lastIssuedCode && (
                   <div className="p-3 bg-slate-900 border border-amber-500/30 rounded-xl text-amber-300 mt-4">
-                    Assigned Vault Code: <strong className="text-white text-sm">{lastIssuedCode}</strong>
+                    Delivered Coupon Code: <strong className="text-white text-sm">{lastIssuedCode}</strong>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* TAB 6: CUSTOMER 360 */}
+          {/* TAB 6: CUSTOMER 360 / ORDERS */}
           {activeTab === "customers" && (
             <div className="space-y-6">
               <h2 className="text-lg font-bold text-white flex items-center space-x-2">
                 <Users className="w-5 h-5 text-teal-400" />
-                <span>6. Customer 360° & Orders (Live PostgreSQL)</span>
+                <span>Customer Orders & Issued Perks</span>
               </h2>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
@@ -1266,7 +1312,7 @@ export default function SubzoPlatform() {
                       <th className="py-3 px-4">CUSTOMER</th>
                       <th className="py-3 px-4">PHONE</th>
                       <th className="py-3 px-4">GEOGRAPHY</th>
-                      <th className="py-3 px-4">ACTIVE PLANS & DELIVERED CODES</th>
+                      <th className="py-3 px-4">ACTIVE PLAN & DELIVERED CODE</th>
                       <th className="py-3 px-4 text-right">LIFETIME SPEND</th>
                     </tr>
                   </thead>
@@ -1295,16 +1341,16 @@ export default function SubzoPlatform() {
             </div>
           )}
 
-          {/* TAB 7: PREDICTIONS */}
-          {activeTab === "predictions" && (
+          {/* TAB 7: PREDICTIONS (ADMIN ONLY) */}
+          {activeTab === "predictions" && currentRole === "admin" && (
             <div className="space-y-6">
               <h2 className="text-lg font-bold text-white flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 text-purple-400" />
-                <span>7. Sales Velocity & Next Steps</span>
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                <span>Wholesale Velocity & Recommendations</span>
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-5 rounded-2xl bg-slate-900/60 border border-blue-500/30 space-y-2">
-                  <span className="text-blue-400 font-bold text-xs">WHOLESALE VOLUME LOCK</span>
+                  <span className="text-blue-400 font-bold text-xs">VOLUME TIER LOCK</span>
                   <h4 className="font-bold text-white text-sm">Lock Tier-1 Rate for SonyLIV</h4>
                   <p className="text-xs text-slate-400 leading-relaxed">
                     Surging at +48% WoW. 18 units away from unlocking upstream ₹715 buy-rate.
@@ -1321,19 +1367,19 @@ export default function SubzoPlatform() {
                   <span className="text-amber-400 font-bold text-xs">FLOAT RUNWAY</span>
                   <h4 className="font-bold text-white text-sm">Weekend Top-Up Projection</h4>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Available balance covers 4.2 days of run rate.
+                    Available balance covers 4.2 days of partner run rate.
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 8: SETTLEMENT */}
-          {activeTab === "settlement" && (
+          {/* TAB 8: SETTLEMENT (ADMIN ONLY) */}
+          {activeTab === "settlement" && currentRole === "admin" && (
             <div className="space-y-6">
               <h2 className="text-lg font-bold text-white flex items-center space-x-2">
                 <FileSpreadsheet className="w-5 h-5 text-rose-400" />
-                <span>8. T+1 Recon & GST Breakdown</span>
+                <span>T+1 Settlement & Automated GST Invoice</span>
               </h2>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden font-mono text-xs">
