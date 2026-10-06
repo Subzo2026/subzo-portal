@@ -15,15 +15,32 @@ import {
   CreditCard,
   Copy,
   Check,
-  Tv,
-  Gamepad2,
-  Bot,
-  Utensils
+  Send,
+  Building,
+  Phone,
+  Mail,
+  MapPin,
+  ChevronRight
 } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function SubzoLandingPage() {
   const [copied, setCopied] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<"ALL" | "OTT" | "LIFESTYLE" | "GAMING" | "AI">("ALL");
+
+  // Lead Enquiry Form State
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [workEmail, setWorkEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
+  const [city, setCity] = useState("");
+  const [primaryInterest, setPrimaryInterest] = useState("Credit Card Perks & Milestones");
+  const [monthlyVolume, setMonthlyVolume] = useState("1,000 - 10,000 activations/mo");
+  const [requirements, setRequirements] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const copySnippet = () => {
     navigator.clipboard.writeText(`curl -X POST https://subzo.in/api/provision \\
@@ -32,6 +49,43 @@ export default function SubzoLandingPage() {
   -d '{"skuCode":"SKU-HOTSTAR-12M","msisdn":"+919876543210"}'`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleEnquirySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError("");
+    setSubmitSuccess(false);
+
+    try {
+      const { error } = await supabase.from("enquiries").insert([
+        {
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          work_email: workEmail.trim().toLowerCase(),
+          phone: phone.trim(),
+          company: company.trim(),
+          city: city.trim(),
+          primary_interest: primaryInterest,
+          monthly_volume: monthlyVolume,
+          requirements: requirements.trim()
+        }
+      ]);
+
+      if (error) throw error;
+      setSubmitSuccess(true);
+      setFirstName("");
+      setLastName("");
+      setWorkEmail("");
+      setPhone("");
+      setCompany("");
+      setCity("");
+      setRequirements("");
+    } catch (err: any) {
+      setSubmitError(err.message || "Failed to submit request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const platforms = [
@@ -182,17 +236,22 @@ export default function SubzoLandingPage() {
       <header className="border-b border-slate-800/60 sticky top-0 z-40 bg-slate-950/80 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
+            <Link href="/" className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">
               S
-            </div>
-            <span className="text-xl font-bold tracking-tight text-white">Subzo</span>
+            </Link>
+            <Link href="/" className="text-xl font-bold tracking-tight text-white hover:text-blue-400 transition">
+              Subzo
+            </Link>
           </div>
 
-          <nav className="hidden md:flex items-center space-x-8 text-xs font-semibold text-slate-400">
-            <a href="#brands" className="hover:text-white transition">Catalog</a>
+          {/* Expanded Top Navigation */}
+          <nav className="hidden md:flex items-center space-x-7 text-xs font-semibold text-slate-400">
+            <Link href="/about" className="hover:text-white transition">About</Link>
+            <Link href="/catalog" className="hover:text-white transition">Catalog</Link>
             <a href="#usecases" className="hover:text-white transition">Use Cases</a>
             <a href="#architecture" className="hover:text-white transition">Fulfillment Rails</a>
             <Link href="/docs" className="hover:text-white transition">API Docs</Link>
+            <Link href="/blogs" className="hover:text-white transition">Blogs</Link>
           </nav>
 
           <div className="flex items-center space-x-3">
@@ -233,26 +292,19 @@ export default function SubzoLandingPage() {
             Provision OTT memberships, lifestyle benefits, gaming passes, and AI subscriptions instantly into your user experience. Built with dual fulfillment: direct MSISDN activation and secure voucher delivery.
           </p>
 
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/login"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs tracking-wide shadow-xl shadow-blue-600/25 transition flex items-center justify-center space-x-2"
+          <div className="pt-2 flex items-center justify-center">
+            <a
+              href="#callback"
+              className="px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs tracking-wide shadow-xl shadow-blue-600/25 transition flex items-center space-x-2"
             >
-              <span>Launch Partner Console</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/docs"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs transition flex items-center justify-center space-x-2"
-            >
-              <Code2 className="w-4 h-4 text-cyan-400" />
-              <span>Explore Developer Docs</span>
-            </Link>
+              <span>Talk to Subscription Infrastructure Lead</span>
+              <ChevronRight className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </section>
 
-      {/* Target Use Cases (With Light-Tinted Themed Backgrounds) */}
+      {/* Target Use Cases */}
       <section id="usecases" className="py-20 border-b border-slate-800/50 max-w-7xl mx-auto px-6">
         <div className="text-center space-y-2 mb-12">
           <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Built For Every Customer Touchpoint</span>
@@ -283,7 +335,7 @@ export default function SubzoLandingPage() {
         </div>
       </section>
 
-      {/* Brand Catalog Grid (With Tailored Light Color Themes & Rich Brand Details) */}
+      {/* Brand Catalog Preview */}
       <section id="brands" className="py-20 border-b border-slate-800/50 max-w-7xl mx-auto px-6">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
           <div>
@@ -292,7 +344,6 @@ export default function SubzoLandingPage() {
             <p className="text-xs text-slate-400 mt-1">Top-tier wholesale allocations directly integrated for Indian enterprise platforms.</p>
           </div>
 
-          {/* Meaningful Ecosystem Filter */}
           <div className="flex items-center space-x-2 overflow-x-auto pb-1">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 hidden sm:inline">
               Top Tier & Niche Ecosystems:
@@ -344,6 +395,16 @@ export default function SubzoLandingPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            href="/catalog"
+            className="inline-flex items-center space-x-2 text-xs font-semibold px-6 py-3 rounded-xl bg-slate-900 border border-slate-800 text-blue-400 hover:text-white hover:bg-slate-800 transition"
+          >
+            <span>Explore Complete Master Catalog & Full Brand Specifications</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
       </section>
 
@@ -399,16 +460,189 @@ export default function SubzoLandingPage() {
         </div>
       </section>
 
-      {/* Clean Footer (Redundant Links Removed) */}
-      <footer className="py-12 max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-500">
-        <div className="flex items-center space-x-3">
-          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white text-xs">S</div>
-          <span className="text-slate-300 font-semibold">Subzo Technologies India</span>
-          <span>© 2026. All rights reserved.</span>
+      {/* Enterprise Callback & Partnerships Enquiry Desk */}
+      <section id="callback" className="py-24 border-b border-slate-800/50 bg-slate-900/20">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center space-y-3 mb-12">
+            <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Enterprise Partnerships</span>
+            <h2 className="text-3xl font-extrabold text-white">Request Platform Call Back & Wholesale Rates</h2>
+            <p className="text-sm text-slate-400 max-w-xl mx-auto">
+              Tell us about your customer volume, desired brands, and perks architecture. Our partnerships lead will connect with custom commercial terms.
+            </p>
+          </div>
+
+          <form onSubmit={handleEnquirySubmit} className="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl shadow-2xl space-y-5">
+            {submitSuccess && (
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-xs flex items-center space-x-3">
+                <Check className="w-5 h-5 shrink-0" />
+                <div>
+                  <strong className="font-bold block">Enquiry Received Successfully!</strong>
+                  <span>Our enterprise lead will call you back within 2 business hours.</span>
+                </div>
+              </div>
+            )}
+
+            {submitError && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-xs">
+                {submitError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-slate-400 font-semibold text-xs block mb-1.5">First Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Rahul"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 font-sans"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold text-xs block mb-1.5">Last Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Sharma"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 font-sans"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-slate-400 font-semibold text-xs block mb-1.5">Official Work Email *</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="name@company.com"
+                    value={workEmail}
+                    onChange={(e) => setWorkEmail(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 font-sans"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold text-xs block mb-1.5">Phone Number (with Country Code) *</label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 font-sans"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-slate-400 font-semibold text-xs block mb-1.5">Company / Platform Name</label>
+                <div className="relative">
+                  <Building className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    placeholder="e.g. Acme Fintech / OneCard"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 font-sans"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold text-xs block mb-1.5">Current City *</label>
+                <div className="relative">
+                  <MapPin className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Pune, Bengaluru, Mumbai"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 font-sans"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-slate-400 font-semibold text-xs block mb-1.5">Primary Use Case</label>
+                <select
+                  value={primaryInterest}
+                  onChange={(e) => setPrimaryInterest(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-sans"
+                >
+                  <option value="Credit Card Perks & Milestones">Credit Card Perks & Milestones</option>
+                  <option value="Rewards & Loyalty Points Burn">Rewards & Loyalty Points Burn</option>
+                  <option value="Giveaways & User Acquisition">Giveaways & User Acquisition</option>
+                  <option value="Employee Benefits & Corporate Wellness">Employee Benefits & Corporate Wellness</option>
+                  <option value="Custom API & Co-Branded Hub">Custom In-App API Subscription Hub</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold text-xs block mb-1.5">Projected Monthly Volume</label>
+                <select
+                  value={monthlyVolume}
+                  onChange={(e) => setMonthlyVolume(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-sans"
+                >
+                  <option value="< 1,000 activations/mo">&lt; 1,000 activations/mo</option>
+                  <option value="1,000 - 10,000 activations/mo">1,000 - 10,000 activations/mo</option>
+                  <option value="10,000 - 50,000 activations/mo">10,000 - 50,000 activations/mo</option>
+                  <option value="50,000+ activations/mo">50,000+ activations/mo (High Volume)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-slate-400 font-semibold text-xs block mb-1.5">
+                What are you looking for? (Specific brands, delivery models, integration timeline)
+              </label>
+              <textarea
+                rows={3}
+                placeholder="e.g. We are looking to distribute annual JioHotstar & Swiggy One vouchers to our premium cardholders with webhook notifications..."
+                value={requirements}
+                onChange={(e) => setRequirements(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 font-sans"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-xl shadow-blue-600/25"
+            >
+              <Send className="w-4 h-4" />
+              <span>{isSubmitting ? "Submitting Call Back Request..." : "Request Partnership Call Back"}</span>
+            </button>
+          </form>
         </div>
-        <p className="text-[11px] text-slate-500">
-          Enterprise subscription distribution rails and digital voucher clearinghouse.
-        </p>
+      </section>
+
+      {/* Clean Footer with Pune attribution */}
+      <footer className="py-10 max-w-7xl mx-auto px-6 border-t border-slate-900 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div>
+          <span>Subzo Technologies Pvt Ltd, India © 2026. All rights reserved.</span>
+        </div>
+        <div className="flex items-center space-x-1.5 text-slate-400 font-medium">
+          <span>Made with</span>
+          <span className="text-red-500">❤️</span>
+          <span>in Pune</span>
+        </div>
       </footer>
     </div>
   );
