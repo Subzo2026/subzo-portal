@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, ArrowRight, AlertCircle, Building2 } from "lucide-react";
+import { Lock, Mail, ArrowRight, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function PartnerLoginPage() {
@@ -91,10 +91,7 @@ export default function PartnerLoginPage() {
           </div>
 
           <div>
-            <label className="text-slate-400 font-semibold text-xs block mb-1.5 flex items-center justify-between">
-              <span>Password</span>
-              <span className="text-[10px] text-slate-500 font-mono">TLS 1.3</span>
-            </label>
+            <label className="text-slate-400 font-semibold text-xs block mb-1.5">Password</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
               <input

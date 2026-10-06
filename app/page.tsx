@@ -49,16 +49,6 @@ export default function SubzoLandingPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-600 selection:text-white">
-      {/* Top Status Bar */}
-      <div className="border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-md px-4 py-2 text-center text-xs text-slate-400">
-        <span className="inline-flex items-center space-x-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span className="font-semibold text-slate-300">Subzo Infrastructure</span>
-          <span>•</span>
-          <span>Unified Digital Subscription Supply Gateway for Enterprises</span>
-        </span>
-      </div>
-
       {/* Main Header */}
       <header className="border-b border-slate-800/60 sticky top-0 z-40 bg-slate-950/80 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -77,14 +67,12 @@ export default function SubzoLandingPage() {
           </nav>
 
           <div className="flex items-center space-x-3">
-            {/* Subzo Team Login */}
             <Link
               href="/admin-login"
               className="text-xs font-semibold px-4 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-900 transition"
             >
               Sign In
             </Link>
-            {/* Partner Login */}
             <Link
               href="/login"
               className="text-xs font-semibold px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20 transition flex items-center space-x-1.5"
