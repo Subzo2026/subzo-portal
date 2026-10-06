@@ -352,6 +352,7 @@ export default function SubzoPlatform() {
 
   const filteredOrders = orders.filter((o) => (currentRole === "admin" ? true : o.partnerId === currentRole));
   const filteredKeys = apiKeys.filter((k) => (currentRole === "admin" ? true : k.partnerId === currentRole));
+  const handleLogout = () => { document.cookie = "subzo_session=; path=/; max-age=0;"; window.location.href = "/login"; };
   const activePartnerData = partners.find((p) => p.id === currentRole);
   const currentSelectedSku = catalog.find((c) => c.id === selectedSkuId) || catalog[0];
 
@@ -719,6 +720,7 @@ export default function SubzoPlatform() {
             <p className="text-[10px] text-emerald-400 font-mono">
               {currentRole === "admin" ? "Checker Role (Authorized)" : "Partner Portal Access"}
             </p>
+            <button onClick={handleLogout} className="mt-2 text-[10px] text-red-400 hover:text-red-300 font-semibold block transition">Sign Out of Session</button>
           </div>
         </div>
       </aside>
