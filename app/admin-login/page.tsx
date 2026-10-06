@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, ArrowRight, AlertCircle, Building2 } from "lucide-react";
+import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
-export default function PartnerLoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,11 +25,6 @@ export default function PartnerLoginPage() {
         password: password
       });
 
-      let partnerId = "PRT-101";
-      if (cleanEmail.includes("famapp")) {
-        partnerId = "PRT-102";
-      }
-
       if (authError) {
         if (password === "Subzo@2026") {
           // Authorized fallback
@@ -39,16 +34,16 @@ export default function PartnerLoginPage() {
       }
 
       document.cookie = `subzo_session=authorized; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-      document.cookie = `subzo_role=partner; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-      document.cookie = `subzo_partner_id=${partnerId}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+      document.cookie = `subzo_role=admin; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+      document.cookie = `subzo_partner_id=PRT-101; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
 
-      localStorage.setItem("subzo_user_role", "partner");
-      localStorage.setItem("subzo_partner_id", partnerId);
+      localStorage.setItem("subzo_user_role", "admin");
+      localStorage.setItem("subzo_partner_id", "PRT-101");
       localStorage.setItem("subzo_user_email", cleanEmail);
 
       router.push("/console");
     } catch (err: any) {
-      setError(err.message || "Invalid credentials. Please verify your email and password.");
+      setError(err.message || "Invalid administrative credentials.");
     } finally {
       setLoading(false);
     }
@@ -63,8 +58,8 @@ export default function PartnerLoginPage() {
           <div className="inline-flex w-12 h-12 bg-blue-600 rounded-2xl items-center justify-center font-bold text-white text-xl shadow-xl shadow-blue-500/20 mb-2">
             S
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Partner Console</h1>
-          <p className="text-xs text-slate-400">Secure access for enterprise clients, partners & rewards managers.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Subzo Admin Portal</h1>
+          <p className="text-xs text-slate-400">Restricted operational access for Subzo internal team.</p>
         </div>
 
         <form onSubmit={handleLogin} className="p-7 rounded-3xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl shadow-2xl space-y-4">
@@ -76,7 +71,7 @@ export default function PartnerLoginPage() {
           )}
 
           <div>
-            <label className="text-slate-400 font-semibold text-xs block mb-1.5">Partner Email</label>
+            <label className="text-slate-400 font-semibold text-xs block mb-1.5">Email ID</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
               <input
@@ -113,13 +108,13 @@ export default function PartnerLoginPage() {
             disabled={loading}
             className="w-full py-3 mt-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/25"
           >
-            <span>{loading ? "Authenticating..." : "Sign In to Partner Console"}</span>
-            <ArrowRight className="w-4 h-4" />
+            <ShieldCheck className="w-4 h-4" />
+            <span>{loading ? "Authenticating..." : "Sign In to Operations Cockpit"}</span>
           </button>
         </form>
 
         <p className="text-center text-[11px] text-slate-600">
-          Subzo Technologies India © 2026. Access is protected by enterprise session tokens.
+          Subzo Technologies India © 2026. All administrative actions are recorded in immutable audit logs.
         </p>
       </div>
     </div>

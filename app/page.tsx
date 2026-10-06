@@ -77,13 +77,14 @@ export default function SubzoLandingPage() {
           </nav>
 
           <div className="flex items-center space-x-3">
-            {/* Directly links to clean /login page */}
+            {/* Subzo Team Login */}
             <Link
-              href="/login"
+              href="/admin-login"
               className="text-xs font-semibold px-4 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-900 transition"
             >
               Sign In
             </Link>
+            {/* Partner Login */}
             <Link
               href="/login"
               className="text-xs font-semibold px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20 transition flex items-center space-x-1.5"
@@ -120,7 +121,7 @@ export default function SubzoLandingPage() {
               href="/login"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs tracking-wide shadow-xl shadow-blue-600/25 transition flex items-center justify-center space-x-2"
             >
-              <span>Launch Operations Portal</span>
+              <span>Launch Partner Console</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
@@ -193,7 +194,6 @@ export default function SubzoLandingPage() {
             <p className="text-xs text-slate-400 mt-1">Direct wholesale allocations for Indian consumer enterprises.</p>
           </div>
 
-          {/* Filter Pills */}
           <div className="flex items-center space-x-2 overflow-x-auto pb-1">
             {(["ALL", "OTT", "LIFESTYLE", "GAMING", "AI"] as const).map((cat) => (
               <button
@@ -238,7 +238,7 @@ export default function SubzoLandingPage() {
         </div>
       </section>
 
-      {/* Developer Preview */}
+      {/* Developer Architecture */}
       <section id="architecture" className="py-20 border-b border-slate-800/50 max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
@@ -298,8 +298,9 @@ export default function SubzoLandingPage() {
           <span>© 2026. All rights reserved.</span>
         </div>
         <div className="flex items-center space-x-6">
-          <Link href="/login" className="hover:text-slate-300 transition">Portal Sign In</Link>
-          <Link href="/docs" className="hover:text-slate-300 transition">API Documentation</Link>
+          <Link href="/login" className="hover:text-slate-300 transition">Partner Console</Link>
+          <Link href="/admin-login" className="hover:text-slate-300 transition">Subzo Team Sign In</Link>
+          <Link href="/docs" className="hover:text-slate-300 transition">API Docs</Link>
           <span className="font-mono text-emerald-400">● Systems 100% Operational</span>
         </div>
       </footer>
