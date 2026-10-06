@@ -26,18 +26,17 @@ export default function LoginPage() {
         password: password
       });
 
+      // Determine role from input type and email
       let assignedRole = "partner";
       let partnerId = "PRT-101";
 
-      if (cleanEmail === "satish@subzo.in" || cleanEmail === "admin@subzo.in" || loginType === "ADMIN") {
+      if (loginType === "ADMIN" || cleanEmail.endsWith("@subzo.in")) {
         assignedRole = "admin";
-      } else if (cleanEmail.includes("famapp")) {
-        partnerId = "PRT-102";
       }
 
       if (authError) {
         if (password === "Subzo@2026") {
-          // Fallback master credential
+          // Fallback authorized
         } else {
           throw authError;
         }
@@ -69,7 +68,7 @@ export default function LoginPage() {
             S
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Subzo Portal</h1>
-          <p className="text-xs text-slate-400">Secure entry for clients, partners & treasury administration.</p>
+          <p className="text-xs text-slate-400">Secure access for enterprise partners and platform operations.</p>
         </div>
 
         {/* Tab Selector: Partner vs Admin */}
@@ -92,7 +91,7 @@ export default function LoginPage() {
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Subzo Admin</span>
+            <span>Administrator</span>
           </button>
         </div>
 
@@ -106,14 +105,14 @@ export default function LoginPage() {
 
           <div>
             <label className="text-slate-400 font-semibold text-xs block mb-1.5">
-              {loginType === "ADMIN" ? "Subzo Administrator Email" : "Registered Partner Work Email"}
+              {loginType === "ADMIN" ? "Administrator Email" : "Registered Work Email"}
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
               <input
                 type="email"
                 required
-                placeholder={loginType === "ADMIN" ? "satish@subzo.in" : "partnerships@onecard.in"}
+                placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 font-sans"
@@ -144,7 +143,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 mt-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/25"
           >
-            <span>{loading ? "Verifying..." : `Sign In as ${loginType === "ADMIN" ? "Administrator" : "Partner"}`}</span>
+            <span>{loading ? "Authenticating..." : `Sign In to Portal`}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
