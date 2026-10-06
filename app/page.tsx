@@ -125,7 +125,6 @@ export default function SubzoLandingPage() {
     }
   ];
 
-  // Master Brand Dataset with rich metadata across all sectors
   const allMasterBrands = [
     // Streaming & OTT
     { name: "JioHotstar", category: "OTT", plan: "Super & Premium 12M", badge: "Instant MSISDN / Voucher", content: "Cricket, HBO, Disney+ & regional blockbusters with 4K multi-screen support.", bg: "bg-blue-950/25 border-blue-500/25 hover:border-blue-400/50 hover:bg-blue-900/30", color: "text-blue-300", badgeColor: "bg-blue-500/10 text-blue-300 border-blue-500/20", priority: 1 },
@@ -188,8 +187,6 @@ export default function SubzoLandingPage() {
     { name: "Grammarly AI", category: "AI", plan: "Generative Professional", badge: "License Key", content: "Context-aware co-writing, tone calibration, and enterprise-grade privacy protection.", bg: "bg-emerald-950/20 border-emerald-500/20 hover:border-emerald-500/40", color: "text-emerald-300", badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20", priority: 50 },
   ];
 
-  // Logic: When "ALL" is selected, show the primary top 10 master showcase.
-  // When a specific category is clicked, show strictly the top 10 brands of that ecosystem.
   const filteredBrands =
     selectedCategory === "ALL"
       ? allMasterBrands.filter((b) => b.priority <= 10)
@@ -299,24 +296,21 @@ export default function SubzoLandingPage() {
         </div>
       </section>
 
-      {/* Brand Catalog Preview with Top 10 Display Logic */}
+      {/* Brand Catalog Preview */}
       <section id="brands" className="py-20 border-b border-slate-800/50 max-w-7xl mx-auto px-6">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
           <div>
             <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Brand Network</span>
             <h2 className="text-3xl font-bold text-white mt-1">Available Subscriptions & Perks</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Top 10 curated wholesale allocations displayed per ecosystem.
+              Top curated wholesale allocations displayed per ecosystem.
             </p>
           </div>
 
-          {/* Ecosystem Filter Selector */}
+          {/* Clean Ecosystem Filter Selector */}
           <div className="flex items-center space-x-2 overflow-x-auto pb-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 hidden sm:inline">
-              Top 10 Curations:
-            </span>
             {[
-              { id: "ALL", label: "All Premium Catalog" },
+              { id: "ALL", label: "All Master SKUs" },
               { id: "OTT", label: "Streaming & OTT" },
               { id: "LIFESTYLE", label: "Everyday Lifestyle" },
               { id: "SAAS", label: "SaaS & Tools" },
@@ -338,7 +332,7 @@ export default function SubzoLandingPage() {
           </div>
         </div>
 
-        {/* Dynamic Brand Cards Grid (Strict Top 10) */}
+        {/* Dynamic Brand Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
           {filteredBrands.map((brand, idx) => (
             <div
@@ -429,7 +423,7 @@ export default function SubzoLandingPage() {
         </div>
       </section>
 
-      {/* Enterprise Callback Enquiry Desk (Zero Partner Disclosures) */}
+      {/* Enterprise Callback Enquiry Desk */}
       <section id="callback" className="py-24 border-b border-slate-800/50 bg-slate-900/20">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center space-y-3 mb-12">
@@ -605,13 +599,10 @@ export default function SubzoLandingPage() {
       {/* Clean Footer with Social Media & Pune Attribution */}
       <footer className="py-12 max-w-7xl mx-auto px-6 border-t border-slate-900 space-y-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          {/* Left Corner: Brand + Official Social Icons */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-xs">
             <span className="text-slate-400 font-medium">Subzo Technologies Pvt Ltd, India © 2026. All rights reserved.</span>
 
-            {/* Social Media Links */}
             <div className="flex items-center space-x-3 text-slate-400">
-              {/* LinkedIn */}
               <a
                 href="https://linkedin.com"
                 target="_blank"
@@ -624,7 +615,6 @@ export default function SubzoLandingPage() {
                 </svg>
               </a>
 
-              {/* X (Twitter) */}
               <a
                 href="https://x.com"
                 target="_blank"
@@ -637,7 +627,6 @@ export default function SubzoLandingPage() {
                 </svg>
               </a>
 
-              {/* YouTube */}
               <a
                 href="https://youtube.com"
                 target="_blank"
@@ -650,7 +639,6 @@ export default function SubzoLandingPage() {
                 </svg>
               </a>
 
-              {/* Instagram */}
               <a
                 href="https://instagram.com"
                 target="_blank"
@@ -663,7 +651,6 @@ export default function SubzoLandingPage() {
                 </svg>
               </a>
 
-              {/* Facebook */}
               <a
                 href="https://facebook.com"
                 target="_blank"
@@ -676,7 +663,6 @@ export default function SubzoLandingPage() {
                 </svg>
               </a>
 
-              {/* Reddit */}
               <a
                 href="https://reddit.com"
                 target="_blank"
@@ -691,7 +677,6 @@ export default function SubzoLandingPage() {
             </div>
           </div>
 
-          {/* Right Corner: Made with love attribution */}
           <div className="flex items-center space-x-1.5 text-slate-400 font-medium text-xs">
             <span>Made with</span>
             <span className="text-red-500">❤️</span>
