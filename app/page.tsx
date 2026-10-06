@@ -77,6 +77,7 @@ export default function SubzoLandingPage() {
           </nav>
 
           <div className="flex items-center space-x-3">
+            {/* Directly links to clean /login page */}
             <Link
               href="/login"
               className="text-xs font-semibold px-4 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-900 transition"
